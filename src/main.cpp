@@ -1,3 +1,4 @@
+#include "composer.h"
 #include "exception.h"
 #include "io.h"
 #include "parser.h"
@@ -11,19 +12,37 @@
 using namespace chi;
 using namespace one;
 
-int main() {
-	StdinStream stdin;
+int main( int argc, const char** argv ) {
+	
 	try {
-		Linked document = Parser( stdin ).parse();
+		StdinStream stdin;
+		StdoutStream stdout;
 
-		// TODO: Expand all definitions from main
+		Linked document;
+		if ( argc < 2 )
+			document = Parser( stdin ).parse();
+		else {
+			const char* filename = argv[1];
+			ReadFileStream input_file( filename );
+			document = Parser( input_file ).parse();
+		}
+
+		DynamicBuffer output = Composer( document ).composeDocument();
+printf("errrrr %d\n", output.size());
+		stdout.write( output );
+	}
+	catch ( one::ParseException& e ) {
+		PRINT_ERROR( "Parse error: %s", e.message().ptr() );
+	}
+	catch ( chi::AllocException& e ) {
+		PRINT_ERROR( "Out of memory" );
 	}
 	catch ( chi::Exception& e ) {
 		PRINT_ERROR( "Uncaught Chi exception occurred" );
 	}
-	catch ( one::Exception& e ) {
+	/*catch ( one::Exception& e ) {
 		PRINT_ERROR( "Uncaught One exception occurred" );
-	}
+	}*/
 
 	return 0;
 }

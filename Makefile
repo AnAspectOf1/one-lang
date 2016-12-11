@@ -34,6 +34,9 @@ clean:
 	rm -f $(OBJ_FILES)
 	rm -r -f $(INCL_DIR)
 
+test: $(BIN_DIR)/$(NAME)
+	gdb --args $(BIN_DIR)/$(NAME) test.one
+
 $(BIN_DIR)/$(NAME): $(OBJ_FILES) $(BIN_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ_FILES) -o $(BIN_DIR)/$(NAME)
 

@@ -31,10 +31,12 @@ namespace one {
 	};
 
 	class Statement {
-		StatementType type;
+		StatementType _type;
 
 	public:
-		Statement( StatementType type ) : type(type) {}
+		Statement( StatementType type ) : _type(type) {}
+
+		StatementType type()	{ return this->_type; }
 	};
 
 	class BreakStatement : public Statement {
@@ -46,7 +48,7 @@ namespace one {
 	public:
 		chi::String<chi::FutureAllocator<char>> string;
 
-		StringLiteralStatement() : Statement( StatementType_Else ) {}
+		StringLiteralStatement() : Statement( StatementType_StringLiteral ) {}
 	};
 }
 

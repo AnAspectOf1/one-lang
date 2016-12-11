@@ -10,7 +10,15 @@
 
 namespace one {
 
-	class ParseException : public Exception {};
+	class ParseException : public Exception {
+		chi::String<> msg;		
+
+	public:
+		ParseException( const char* message ) : msg(message) {}
+		ParseException( const chi::String<>& message ) : msg(message) {}
+
+		const chi::String<>& message() const	{ return this->msg; }
+	};
 
 	class Parser {
 	protected:

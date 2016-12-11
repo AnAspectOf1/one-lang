@@ -46,6 +46,10 @@ namespace one {
 	class ReadFileStream : public virtual FileStream, public virtual ReadStream {
 	public:
 		ReadFileStream() {}
+		ReadFileStream( const char* filename ) {
+			this->fd = open( filename, O_RDONLY );
+			if ( this->fd == -1 )	throw UnknownIoException();
+		}
 
 		chi::Buffer<> read( chi::Size length ) {
 			if ( length == 0 )	return chi::Buffer<>();
@@ -55,7 +59,7 @@ namespace one {
 			if ( read == -1 )	throw UnknownIoException();
 
 			if ( (chi::Size)read < length )
-				buffer.shrink( read );
+				buffer.shrink( length - read );
 			return buffer;
 		}
 	};

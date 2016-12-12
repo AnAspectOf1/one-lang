@@ -11,7 +11,7 @@ DEBUG = yes
 CC = g++
 CFLAGS = -Wall -std=c++11
 LDFLAGS =
-CHI_INCLUDE = ~/Projects/libchicol/include
+CHI_INCLUDE = ~/Projects/libchi/include
 DEV = yes
 
 
@@ -35,7 +35,7 @@ clean:
 	rm -r -f $(INCL_DIR)
 
 test: $(BIN_DIR)/$(NAME)
-	gdb --args $(BIN_DIR)/$(NAME) test.one
+	gdb --args $(BIN_DIR)/$(NAME) test/example.1
 
 $(BIN_DIR)/$(NAME): $(OBJ_FILES) $(BIN_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ_FILES) -o $(BIN_DIR)/$(NAME)

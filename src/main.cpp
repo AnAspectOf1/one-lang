@@ -7,13 +7,15 @@
 #include <cstdio>
 
 #define PRINT_ERROR( MSG... ) \
-	{ fprintf( stderr, MSG ); fprintf( stderr, ".\n" ); }
+	{ fprintf( stderr, "[One]\t" ); fprintf( stderr, MSG ); fprintf( stderr, ".\n" ); }
 
 using namespace chi;
 using namespace one;
 
+void test();
+
 int main( int argc, const char** argv ) {
-	
+
 	try {
 		StdinStream stdin;
 		StdoutStream stdout;
@@ -28,11 +30,7 @@ int main( int argc, const char** argv ) {
 		}
 
 		DynamicBuffer output = Composer( document ).composeDocument();
-printf("errrrr %d\n", output.size());
 		stdout.write( output );
-	}
-	catch ( one::ParseException& e ) {
-		PRINT_ERROR( "Parse error: %s", e.message().ptr() );
 	}
 	catch ( chi::AllocException& e ) {
 		PRINT_ERROR( "Out of memory" );
@@ -40,9 +38,12 @@ printf("errrrr %d\n", output.size());
 	catch ( chi::Exception& e ) {
 		PRINT_ERROR( "Uncaught Chi exception occurred" );
 	}
-	/*catch ( one::Exception& e ) {
+	catch ( one::ParseException& e ) {
+		PRINT_ERROR( "Parse error on line %d, column %d: %s", e.line, e.column, e.message().ptr() );
+	}
+	catch ( one::Exception& e ) {
 		PRINT_ERROR( "Uncaught One exception occurred" );
-	}*/
+	}
 
 	return 0;
 }

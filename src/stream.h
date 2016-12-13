@@ -1,13 +1,14 @@
 #ifndef _ONE_STREAM_H
 #define _ONE_STREAM_H
 
+#include "exception.h"
 #include <chi/buffer.h>
 #include <chi/string.h>
 
 
 namespace one {
 
-	class StreamException {};
+	class StreamException : public Exception {};
 	class EndOfStreamException : public StreamException {};
 
 	class Stream {
@@ -25,10 +26,8 @@ namespace one {
 			return buffer[0];
 		}
 
-		virtual char readChar() {
-			chi::Buffer<> buffer = this->read(1);
-			if ( buffer.count() < 1 )	throw EndOfStreamException();
-			return buffer[0];
+		char readChar() {
+			return this->readByte();
 		}
 
 		virtual chi::String<> readString( chi::Size length ) {

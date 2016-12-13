@@ -4,34 +4,48 @@
 #include "exception.h"
 #include "statement.h"
 #include "stream.h"
+#include "tracker_stream.h"
+#include <chi/ptr.h>
 #include <chi/linked.h>
 #include <chi/string.h>
 
 
 namespace one {
 
-	class ParseException : public Exception {
-		chi::String<> msg;		
-
-	public:
-		ParseException( const char* message ) : msg(message) {}
-		ParseException( const chi::String<>& message ) : msg(message) {}
-
-		const chi::String<>& message() const	{ return this->msg; }
-	};
-
 	class Parser {
+	private:
+		char _stringSpecialChar( char c );
+
 	protected:
-		ReadStream& stream;
+		TrackerStream stream;
+
 		static chi::String<> whitespace;
+		static chi::String<> numeric;
 
 	public:
-		Parser( ReadStream& stream ) : stream( stream ) {}
+		Parser( ReadStream& stream ) : stream( &stream ) {}
 
 		chi::Linked parse();
-		Statement* parseStatement( char firstChar );
-		StringLiteralStatement parseStringLiteral( bool double_quoted = true );
+		FormatStatement parseFormat();
+		NumberStatement parseNumber( char firstChar );
+		chi::ManPtr<Statement> parseStatement( char firstChar );
+		StringStatement parseString( bool double_quoted = true );
+		char skip( const chi::String<>& chars );
 		char skipWhitespace();
+
+		unsigned int currentLine() const;
+		unsigned int currentColumn() const;
+	};
+
+	class ParseException {
+	public:
+		const unsigned int line, column;
+		const chi::String<> msg;
+
+		ParseException( const Parser& parser, const char* message ) : line(parser.currentLine()), column(parser.currentColumn()), msg(message) {}
+		ParseException( const Parser& parser, const chi::String<>& message ) : line(parser.currentLine()), column(parser.currentColumn()), msg(message) {}
+
+		const chi::String<>& message() const	{ return this->msg; }
 	};
 }
 

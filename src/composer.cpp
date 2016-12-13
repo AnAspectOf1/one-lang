@@ -8,9 +8,7 @@ using namespace one;
 
 Composer::Composer( chi::Linked& document ) : document(document) {}
 
-DynamicBuffer Composer::compose( Linked& statements ) {	
-//statements.count();
-printf( "size %d\n", statements.count() );
+DynamicBuffer Composer::compose( Linked& statements ) {
 	DynamicBuffer buffer;
 
 	Link<Statement*>* statement = (Link<Statement*>*)statements.first();
@@ -29,18 +27,18 @@ DynamicBuffer Composer::composeDocument() {
 }
 
 DynamicBuffer Composer::composeStatement( Statement* statement ) {
-	if ( statement->type() == StatementType_StringLiteral )
-		return this->composeStringLiteral( (StringLiteralStatement*)statement );
+	if ( statement->type() == StatementType_String )
+		return this->composeString( (StringStatement*)statement );
 	
 	ONE_ASSERT( true, "Unrecognized statement type encountered: %d", statement->type() );
 	return DynamicBuffer();
 }
 
-Buffer<> Composer::composeStringLiteral( StringLiteralStatement* statement ) {
-	Buffer<> buffer( statement->string.length() );
+Buffer<> Composer::composeString( StringStatement* statement ) {
+	Buffer<> buffer( statement->string->length() );
 	
 	for ( Size i = 0; i < buffer.count(); i++ ) {
-		buffer[i] = statement->string[i];
+		buffer[i] = (*statement->string)[i];
 	}
 
 	return buffer;

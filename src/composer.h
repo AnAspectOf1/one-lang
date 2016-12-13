@@ -19,7 +19,7 @@ namespace one {
 		chi::DynamicBuffer compose( chi::Linked& statements );
 		chi::DynamicBuffer composeDocument();
 		chi::DynamicBuffer composeStatement( Statement* statement );
-		chi::Buffer<> composeStringLiteral( StringLiteralStatement* statement );
+		chi::Buffer<> composeString( StringStatement* statement );
 	};
 }
 

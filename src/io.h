@@ -62,6 +62,15 @@ namespace one {
 				buffer.shrink( length - read );
 			return buffer;
 		}
+
+		chi::Byte readByte() {
+			chi::Byte byte;
+			int read = ::read( this->fd, &byte, 1 );
+			if ( read == -1 )	throw UnknownIoException();
+			if ( read == 0 )	throw EndOfStreamException();
+
+			return byte;
+		}
 	};
 
 	class WriteFileStream : public virtual FileStream, public virtual WriteStream {

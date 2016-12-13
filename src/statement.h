@@ -4,6 +4,7 @@
 #include <chi/allocator.h>
 #include <chi/array.h>
 #include <chi/linked.h>
+#include <chi/ptr.h>
 #include <chi/string.h>
 
 
@@ -19,15 +20,17 @@ namespace one {
 	enum StatementType {
 		StatementType_Break,            // A break
 		StatementType_Definition,       // A declaration of a new definition
-		StatementType_DefValue,          // A value based on an existing definition
+		StatementType_Identity,         // A value based on an existing definition
 		StatementType_Else,             // An else statement
+		StatementType_Format,           // A format specifier
 		StatementType_If,               // An if statement
 		StatementType_Include,          // Inclusion of some file
+		StatementType_List,             // A list of statements
 		StatementType_Loop,             // A loop statement
 		StatementType_Math,             // Math mode
 		StatementType_Namespace,        // Declaration of namespace
-		StatementType_NumLiteral,       // A value based on a literal number
-		StatementType_StringLiteral,    // A value based on a string
+		StatementType_Number,           // A value based on a literal number
+		StatementType_String            // A value based on a string
 	};
 
 	class Statement {
@@ -44,11 +47,28 @@ namespace one {
 		BreakStatement() : Statement( StatementType_Break ) {}
 	};
 
-	class StringLiteralStatement : public Statement {
+	class NumberStatement : public Statement {
 	public:
-		chi::String<chi::FutureAllocator<char>> string;
+		long long number;
 
-		StringLiteralStatement() : Statement( StatementType_StringLiteral ) {}
+		NumberStatement( long long number = 0 ) : Statement( StatementType_Number ), number(number) {}
+	};
+
+	class StringStatement : public Statement {
+	public:
+		chi::ManPtr<chi::StringBase> string;
+
+		StringStatement() : Statement( StatementType_String ) {}
+		StringStatement( const StringStatement& other ) : Statement( StatementType_String ), string( other.string ) {}
+	};
+
+	class FormatStatement : public Statement {
+	public:
+		chi::ManPtr<chi::StringBase> format;
+		chi::ManPtr<Statement> literal;
+
+		FormatStatement() : Statement( StatementType_Format ) {}
+		FormatStatement( chi::StringBase& format, Statement& literal ) : Statement( StatementType_Format ), format(format), literal(literal) {}
 	};
 }
 

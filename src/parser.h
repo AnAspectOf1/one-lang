@@ -21,20 +21,28 @@ namespace one {
 
 		static chi::String<> whitespace;
 		static chi::String<> numeric;
+		static chi::String<> alphabet;
+		static chi::String<> alphabetUpper;
+
+		ContextStatement parseContext();
+		DefinitionStatement parseDefinition();
+		IdentityStatement parseIdentity();
+		StatementList parseStatements();
+		FormatStatement parseFormat();
+		DynamicString parseName();
+		NumberStatement parseNumber( char firstChar );
+		chi::SPtr<Statement> parseStatement( char firstChar );
+		StringStatement parseString( bool double_quoted = true );
+		char skip( const chi::StringBase& chars );
+		char skipWhitespace();
 
 	public:
 		Parser( ReadStream& stream ) : stream( &stream ) {}
 
-		chi::Linked parse();
-		FormatStatement parseFormat();
-		NumberStatement parseNumber( char firstChar );
-		chi::ManPtr<Statement> parseStatement( char firstChar );
-		StringStatement parseString( bool double_quoted = true );
-		char skip( const chi::String<>& chars );
-		char skipWhitespace();
-
 		unsigned int currentLine() const;
 		unsigned int currentColumn() const;
+
+		StatementList parse();
 	};
 
 	class ParseException {

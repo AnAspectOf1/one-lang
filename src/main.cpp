@@ -3,7 +3,6 @@
 #include "io.h"
 #include "parser.h"
 #include <chi/exception.h>
-#include <chi/linked.h>
 #include <cstdio>
 
 #define PRINT_ERROR( MSG... ) \
@@ -12,15 +11,13 @@
 using namespace chi;
 using namespace one;
 
-void test();
-
 int main( int argc, const char** argv ) {
 
 	try {
 		StdinStream stdin;
 		StdoutStream stdout;
 
-		Linked document;
+		StatementList document;
 		if ( argc < 2 )
 			document = Parser( stdin ).parse();
 		else {
@@ -29,7 +26,7 @@ int main( int argc, const char** argv ) {
 			document = Parser( input_file ).parse();
 		}
 
-		DynamicBuffer output = Composer( document ).composeDocument();
+		DynamicBuffer output = Composer( document ).compose();
 		stdout.write( output );
 	}
 	catch ( chi::AllocException& e ) {

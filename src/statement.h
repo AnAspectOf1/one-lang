@@ -1,19 +1,19 @@
 #ifndef _ONE_STATEMENT_H
 #define _ONE_STATEMENT_H
 
-#include <chi/allocator.h>
-#include <chi/array.h>
+#include <chi/linked.h>
 #include <chi/ptr.h>
 #include <chi/string.h>
+#include <vector>
 
 
 namespace one {
 
 	class Statement;
 
-	class Argument {
-		chi::String<> name;
-		chi::String<> def_name;
+	struct Parameter {
+		chi::CSPtr<chi::StringBase> name;
+		chi::CSPtr<chi::StringBase> def_name;
 	};
 
 	enum StatementType {
@@ -24,11 +24,11 @@ namespace one {
 		StatementType_Format,           // A format specifier
 		StatementType_If,               // An if statement
 		StatementType_Include,          // Inclusion of some file
-		StatementType_Context,          // A list of statements in a subcontext
 		StatementType_Loop,             // A loop statement
 		StatementType_Math,             // Math mode
 		StatementType_Namespace,        // Declaration of namespace
 		StatementType_Number,           // A value based on a literal number
+		StatementType_Scope,            // A list of statements in a subcontext
 		StatementType_String            // A value based on a string
 	};
 
@@ -39,10 +39,41 @@ namespace one {
 		Statement( StatementType type ) : _type(type) {}
 
 		StatementType type() const	{ return this->_type; }
+
+		virtual ~Statement() {}
 	};
 
-	// TODO: Create a linked list class for StatementContext
-	typedef chi::Array<chi::SPtr<Statement>, chi::FutureAllocator<chi::SPtr<Statement>>> StatementList;
+	typedef chi::LinkedList<chi::CSPtr<Statement>> StatementList;
+	// TODO: The above definition of StatementList seems to give segmentations faults. Resolve this.
+	// In the meantime, use the following as a replacement:
+	/*class StatementList : public chi::ArrayBase<chi::CSPtr<Statement>> {
+	protected:
+		std::vector<chi::CSPtr<Statement>> vector;
+
+	public:
+		~StatementList() { printf( "DDDDD StatementList %d\n", this->vector.size() ); }
+
+		chi::CSPtr<Statement>& at( chi::Size index ) override	{ return this->vector[ index ]; }
+		const chi::CSPtr<Statement>& at( chi::Size index ) const override	{ return this->vector[ index ]; }
+
+		chi::Size count() const	{ return this->vector.size(); }
+
+		chi::CSPtr<Statement>* ptr() override	{ return &this->vector[0]; }
+		const chi::CSPtr<Statement>* ptr() const override	{ return &this->vector[0]; }
+
+		void grow( chi::Size increment ) override {
+			this->vector.reserve( this->count() + increment );
+			for ( chi::Size i = 0; i < increment; i++ ) {		
+				this->vector.push_back( chi::CSPtr<Statement>() );
+			}
+		}
+
+		void shrink( chi::Size decrement ) override {
+			for ( chi::Size i = 0; i < decrement; i++ ) {		
+				this->vector.pop_back();
+			}
+		}
+	};*/
 
 	class BreakStatement : public Statement {
 	public:
@@ -52,7 +83,7 @@ namespace one {
 	class DefinitionStatement : public Statement {
 	public:
 		chi::SPtr<chi::StringBase> name;
-		// TODO: An argument list
+		chi::LinkedList<Parameter> params;
 		chi::SPtr<Statement> body;
 
 		DefinitionStatement() : Statement( StatementType_Definition ) {}
@@ -60,14 +91,15 @@ namespace one {
 
 	class IdentityStatement : public Statement {
 	public:
-		chi::List<chi::SPtr<chi::StringBase>> names;
+		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
+		unsigned int line, column;	// Where it was found
 
 		IdentityStatement() : Statement( StatementType_Identity ) {}
 	};
 
 	class NamespaceStatement : public Statement {
 	public:
-		chi::Array<chi::SPtr<chi::StringBase>> names;
+		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
 
 		NamespaceStatement() : Statement( StatementType_Namespace ) {}
 	};
@@ -95,11 +127,11 @@ namespace one {
 		FormatStatement() : Statement( StatementType_Format ) {}
 	};
 
-	class ContextStatement : public Statement {
+	class ScopeStatement : public Statement {
 	public:
-		StatementList context;
+		StatementList contents;
 
-		ContextStatement() : Statement( StatementType_Context ) {}
+		ScopeStatement() : Statement( StatementType_Scope ) {}
 	};
 }
 

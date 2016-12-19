@@ -7,11 +7,12 @@ OBJ_EXT = o
 INCL_EXT = h
 INCL_DIR = include
 DEBUG = yes
+CHI_COMMIT = 1297b41a4b855a2faa6c7907e71d526c82a8a7d1
 
 CC = g++
-CFLAGS = -Wall -std=c++11
+CFLAGS = -std=c++11
 LDFLAGS =
-CHI_INCLUDE = ~/Projects/libchi/include
+CHI_INCLUDE = dep/libchi/include
 DEV = yes
 
 
@@ -21,22 +22,33 @@ HEAD_FILES = $(shell find $(SRC_DIR) -name *.$(INCL_EXT))
 INCL_FILES = $(patsubst $(SRC_DIR)/%.h,$(INCL_DIR)/$(PATH_NAME)/%.h,$(HEAD_FILES))
 
 ifeq ($(DEBUG),yes)
-CFLAGS += -g -Wextra
+CFLAGS += -g -O0 -Wall -Wextra
 LDFLAGS += -rdynamic
 endif
 CFLAGS += -I $(CHI_INCLUDE)
 
 
+.PHONY: build dep all clean
+
 build: $(BIN_DIR)/$(NAME)
 
-all: build
+dep: dep/libchi
+	git -C $< pull origin dev
+	git -C $< checkout $(CHI_COMMIT)
+
+all: dep build
+	
 
 clean:
 	rm -r -f $(BIN_DIR)
 	rm -f $(OBJ_FILES)
 	rm -r -f $(INCL_DIR)
 
+warning:
+	make build
+
 test: $(BIN_DIR)/$(NAME)
+	export EF_PROTECT_FREE=1
 	gdb --args $(BIN_DIR)/$(NAME) test/example.1
 
 $(BIN_DIR)/$(NAME): $(OBJ_FILES) $(BIN_DIR)
@@ -54,3 +66,8 @@ $(INCL_DIR):
 
 $(BIN_DIR):
 	mkdir $(BIN_DIR)
+
+dep/libchi:
+	mkdir -p $@
+	git -C $@ init
+	git -C $@ remote add origin https://github.com/AnAspectOf1/libchi.git

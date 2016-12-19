@@ -3,14 +3,19 @@
 
 #include "exception.h"
 #include "statement.h"
-#include "stream.h"
 #include "tracker_stream.h"
+#include <chi/dynamic.h>
+#include <chi/exception.h>
 #include <chi/ptr.h>
-#include <chi/linked.h>
+#include <chi/stream.h>
 #include <chi/string.h>
 
 
 namespace one {
+
+	class ParserException : public Exception {};
+	class EmptyStatementException : public ParserException {};
+	class EndOfScopeException : public ParserException {};
 
 	class Parser {
 	private:
@@ -19,25 +24,28 @@ namespace one {
 	protected:
 		TrackerStream stream;
 
+		static chi::String<> delimiters;
 		static chi::String<> whitespace;
 		static chi::String<> numeric;
 		static chi::String<> alphabet;
 		static chi::String<> alphabetUpper;
 
-		ContextStatement parseContext();
 		DefinitionStatement parseDefinition();
 		IdentityStatement parseIdentity();
-		StatementList parseStatements();
+		Parameter parseParameter();
+		chi::LinkedList<Parameter> parseParameters();
+		ScopeStatement parseScope();
+		StatementList parseStatements( bool local = false );
 		FormatStatement parseFormat();
-		DynamicString parseName();
-		NumberStatement parseNumber( char firstChar );
-		chi::SPtr<Statement> parseStatement( char firstChar );
+		chi::DynamicString parseName();
+		NumberStatement parseNumber();
+		chi::SPtr<Statement> parseStatement();
 		StringStatement parseString( bool double_quoted = true );
-		char skip( const chi::StringBase& chars );
-		char skipWhitespace();
+		void skip( const chi::StringBase& chars );
+		void skipWhitespace();
 
 	public:
-		Parser( ReadStream& stream ) : stream( &stream ) {}
+		Parser( chi::ReadStream* stream, chi::Seekable* seekable ) : stream( stream, seekable ) {}
 
 		unsigned int currentLine() const;
 		unsigned int currentColumn() const;
@@ -45,7 +53,7 @@ namespace one {
 		StatementList parse();
 	};
 
-	class ParseException {
+	class ParseException : public ParserException {
 	public:
 		const unsigned int line, column;
 		const chi::String<> msg;

@@ -1,6 +1,7 @@
+.gitignore
+
 bin
+dep
 src/*.o
 
 *~
-*.anjuta
-.anjuta*

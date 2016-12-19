@@ -2,24 +2,23 @@
 #define _ONE_DEFINITION_INDEX_H
 
 #include "statement.h"
+#include <chi/map.h>
+
 
 namespace one {
 
 	// The index maintains a library of all available definitions and their namespaces
 	class Index {
-	protected:
-		chi::Map<chi::SPtr<Statement>> definitions;
-		chi::Map<Index>	namespaces;
-
 	public:
-		 
+		chi::Map<chi::CSPtr<Statement>> definitions;
+		//chi::Map<Index> namespaces;
 	};
 
 	class Indexer {
-		StatementList document;
+		const StatementList* document;
 
 	public:
-		Indexer( StatementList document ) : document(document) {}
+		Indexer( const StatementList* document );
 
 		Index index() const;
 	};

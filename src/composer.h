@@ -2,14 +2,16 @@
 #define _ONE_COMPOSER_H
 
 #include "exception.h"
+#include "indexer.h"
 #include "statement.h"
-#include "stream.h"
 #include <chi/buffer.h>
-#include <chi/dynamic.h>
-#include <chi/linked.h>
+#include <chi/stream.h>
+#include <chi/string.h>
 
 
 namespace one {
+
+	class Composer;
 
 	class UnsupportedFormatException : public Exception {
 		chi::String<> format;
@@ -21,33 +23,45 @@ namespace one {
 	// The composer context holds information about the current context the Composer is composing for.
 	// Most of its members are shared pointers (SPtr) because many contexts are mostly similar and thus hold a lot of the same values.
 	class ComposerContext {
-		ComposerContext* parent;
+		friend Composer;
+
+		const ComposerContext* parent;
 
 	public:
-		ComposerContext( ComposerContext* parent = 0 ) : parent(parent) {}
+		ComposerContext() : parent(0) {
+			this->string_format.alloc( chi::String<>( "utf8" ) );
+			this->number_format.alloc( chi::String<>( "uint8" ) );
+		}
+		ComposerContext( const ComposerContext* parent ) : parent(parent), string_format(parent->string_format), number_format(parent->number_format), space(parent->space) {}
 
-		// Formats to use for strings and numbers.
+		// Formats to use for strings and numbers
 		chi::SPtr<chi::StringBase> string_format;
 		chi::SPtr<chi::StringBase> number_format;
-		
-		// The index for the local context.
-		chi::SPtr<Index> index;
 
-		chi::SPtr<Statement> findDefinition( const chi::StringBase& name );
+		// The namespace we are in
+		chi::Array<chi::SPtr<chi::StringBase>> space;
+		
+		// The index for the local context
+		Index index;
+
+		chi::CSPtr<Statement> findDefinition( const chi::StringBase& name ) const;
 	};
 
 	class Composer {
-		const StatementList& document;
+		const StatementList* document;
+		chi::WriteStream& stream;
 
-		chi::DynamicBuffer composeFormat( const ComposerContext& context, const FormatStatement* statement );
-		chi::DynamicBuffer composeStatement( const ComposerContext& context, const Statement* statement );
-		chi::DynamicBuffer composeStatements( const ComposerContext& context, const StatementList& statements );
-		chi::DynamicBuffer composeString( const chi::StringBase& format, const StringStatement* statement );
+		void composeFormat( const ComposerContext& context, const FormatStatement* statement );
+		void composeIdentity( const ComposerContext& context, const IdentityStatement* statement );
+		void composeScope( const ComposerContext& context, const ScopeStatement* statement );
+		void composeStatement( const ComposerContext& context, const Statement* statement );
+		void composeStatements( const ComposerContext& context, const StatementList& statements );
+		void composeString( const ComposerContext& context, const StringStatement* statement );
 
 	public:
-		Composer( const StatementList& document );
+		Composer( chi::WriteStream& stream, const StatementList* document );
 
-		chi::DynamicBuffer compose();
+		void compose();
 	};
 }
 

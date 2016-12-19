@@ -9,8 +9,9 @@ using namespace one;
 
 String<> Parser::alphabet = "abcdefghijklmnopqrstuvwxyz";
 String<> Parser::alphabetUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+String<> Parser::delimiters = ",\n";
 String<> Parser::numeric = "0123456789";
-String<> Parser::whitespace = " \t\r\n";
+String<> Parser::whitespace = " \t\r";
 
 unsigned int Parser::currentLine() const {
 	return this->stream.newlinesRead() + 1;
@@ -21,32 +22,21 @@ unsigned int Parser::currentColumn() const {
 }
 
 StatementList Parser::parse() {
-	return this->parseStatements();
+	try {
+		return this->parseStatements();
+	}
+	catch ( EndOfScopeException e ) {
+		throw ParseException( *this, "Stray closing parentheses ')' found" );
+	}
 }
 
-ContextStatement Parse::parseContext() {
-	ContextStatement statement;
-char c;
-	do {
-		try {
-			c = this->skipWhitespace();
-		}
-		catch ( EndOfStreamException e ) {
-			return statement;
-		}
-
-		statement.context += this->parseStatement( c );
-
-		try {
-			c = this->skip( OS" \t\r" );	// Skip everything except whitespaces
-			if ( c != ',' && c != '\n' )
-				throw ParseException( *this, "Statement has too many components" );
-		}
-		catch ( EndOfStreamException e ) {
-			break;
-		}
+ScopeStatement Parser::parseScope() {
+	ScopeStatement statement;
+	
+	try {
+		statement.contents = this->parseStatements( true );
 	}
-	while ( true );
+	catch ( EndOfScopeException& e ) {}
 
 	return statement;
 }
@@ -54,17 +44,41 @@ char c;
 DefinitionStatement Parser::parseDefinition() {
 	DefinitionStatement statement;
 	statement.name.alloc( this->parseName() );
-	statement.statement.alloc( this->parseStatement(this->stream.readChar()) );
+
+	this->skipWhitespace();
+
+	char c = this->stream.readChar();
+	if ( c == '[' )
+		statement.params = this->parseParameters();
+	else
+		this->stream.move(-1);
+
+	statement.body = this->parseStatement();
+
 	return statement;
 }
 
-IdentityStatement Parser::parseIdentity( char firstChar ) {
+IdentityStatement Parser::parseIdentity() {
 	IdentityStatement statement;
-	statement.name.alloc( this->parseName().prepend( firstChar ) );
+	
+	SPtr<StringBase> name; name.alloc( this->parseName() );
+	statement.names += name;
+
+	char nextChar;
+	while ( (nextChar = this->stream.readChar()) == '.' ) {
+		
+		name.alloc( this->parseName() );
+		statement.names += name;
+	}
+	if ( Parser::delimiters.contains( nextChar ) )
+		this->stream.move(-1);
+	else if ( !Parser::whitespace.contains( nextChar ) )
+		throw ParseException( *this, OS"Invalid character \'" + nextChar + "\' found in identity" );
+
 	return statement;
 }
 
-NamespaceStatement Parser::parseNamespace() {
+/*NamespaceStatement Parser::parseNamespace() {
 	NamespaceStatement statement;
 	char c = this->skipWhitespace();
 
@@ -86,25 +100,82 @@ NamespaceStatement Parser::parseNamespace() {
 	}
 
 	return statement;
+}*/
+
+Parameter Parser::parseParameter() {
+	Parameter param;
+
+	param.name.alloc( this->parseName() );
+	
+	this->skipWhitespace();
+	char c = this->stream.readChar();
+	// If next char indicates a name, parse it as the definition type
+	if ( Parser::alphabet.contains(c) || Parser::alphabetUpper.contains(c) ) {
+		this->stream.move(-1);
+		param.def_name.alloc( this->parseName() );
+	}
+	else
+		this->stream.move(-1);
+	
+	return param;
 }
 
-StatementList Parser::parseStatements() {
+LinkedList<Parameter> Parser::parseParameters() {
+	LinkedList<Parameter> params;
 	char c;
-	StatementList document;
+
+	do {
+		this->skipWhitespace();
+		c = this->stream.readChar();
+		if ( !Parser::delimiters.contains(c) ) {
+			this->stream.move(-1);
+
+			params += this->parseParameter();
+			c = this->stream.readChar();
+
+			if ( c == ']' )
+				break;
+			if ( !Parser::delimiters.contains(c) )
+				throw ParseException( *this, OS"Invalid character '" + c + "' found in parameter list" );
+		}
+	}
+	while ( true );
+
+	return params;
+}
+
+StatementList Parser::parseStatements( bool local ) {
+	StatementList stats;
 	do {
 		try {
-			c = this->skipWhitespace();
+			this->skipWhitespace();
 		}
 		catch ( EndOfStreamException e ) {
-			return document;
+			break;
 		}
-
-		document += this->parseStatement( c );
-
 		try {
-			c = this->skip( OS" \t\r" );	// Skip everything except whitespaces
-			if ( c != ',' && c != '\n' )
-				throw ParseException( *this, "Statement has too many components" );
+			stats += this->parseStatement();
+		}
+		catch ( EmptyStatementException e ) {}
+		catch ( EndOfStreamException e ) {
+			throw ParseException( *this, "Unexpected end of file" );
+		}
+		catch ( EndOfScopeException& e ) {
+			if ( local )	break;
+			// else
+			throw ParseException( *this, "Stray closing parentheses ')'" );
+		}
+		try {
+			this->skip( Parser::whitespace );	// Skip everything except whitespaces
+			// Move over delimiter
+			char c = this->stream.readChar();
+			if ( c == ')' ) {
+				if ( local )	break;
+				// else
+				throw ParseException( *this, "Stray closing parentheses ')'" );
+			}
+			if ( !Parser::delimiters.contains(c) )
+				throw ParseException( *this, OS"Missing delimiter or newline after statement: " + c + this->stream.readChar() );
 		}
 		catch ( EndOfStreamException e ) {
 			break;
@@ -112,37 +183,42 @@ StatementList Parser::parseStatements() {
 	}
 	while ( true );
 
-	return document;
+	return stats;
 }
 
-SPtr<Statement> Parser::parseStatement( char firstChar ) {
+SPtr<Statement> Parser::parseStatement() {
 	SPtr<Statement> statement;
-	try {
-		if ( firstChar == '#' )
-			statement.alloc( this->parseFormat() );
-		else if ( Parser::alphabet.contains(firstChar) || Parser::alphabetUpper.contains(firstChar) )
-			statement.alloc( this->parseIdentity(firstChar) );
-		else if ( firstChar == '@' )
-			statement.alloc( this->parseNamespace() );
-		else if ( firstChar == '"' )
-			statement.alloc( this->parseString(true) );
-		else if ( firstChar == ''' )
-			statement.alloc( this->parseString(false) );
-		else if ( this->numeric.contains( firstChar ) )
-			statement.alloc( this->parseNumber(firstChar) );
-		else if ( firstChar == ')' )
-			throw ParseException( *this, "Found stray closing parentheses ')'" );
-		else
-			throw ParseException( *this, OS"Character '" + firstChar + "' does not begin a statement" );
+	char c = this->stream.readChar();
+
+	if ( Parser::delimiters.contains(c) ) {
+		this->stream.move(-1);
+		throw EmptyStatementException();
 	}
-	catch (one::Exception e) {
-	//	delete statement;
-		throw e;
+	else if ( c == '$' )
+		statement.alloc( this->parseDefinition() );
+	else if ( c == '#' )
+		statement.alloc( this->parseFormat() );
+	else if ( Parser::alphabet.contains(c) || Parser::alphabetUpper.contains(c) ) {
+		this->stream.move(-1);
+		statement.alloc( this->parseIdentity() );
 	}
-	catch (chi::Exception e) {
-	//	delete statement;
-		throw e;
+	//else if ( c == '@' )
+	//	statement.alloc( this->parseNamespace() );
+	else if ( c == '"' )
+		statement.alloc( this->parseString(true) );
+	else if ( c == '\'' )
+		statement.alloc( this->parseString(false) );
+	else if ( this->numeric.contains( c ) ) {		
+		this->stream.move(-1);
+		statement.alloc( this->parseNumber() );
 	}
+	else if ( c == '(' ) {
+		statement.alloc( this->parseScope() );
+	}
+	else if ( c == ')' )
+		throw EndOfScopeException();
+	else
+		throw ParseException( *this, OS"Character '" + c + "' does not begin a statement" );
 
 	return statement;
 }
@@ -151,14 +227,17 @@ FormatStatement Parser::parseFormat() {
 	FormatStatement statement;
 	statement.format.alloc<DynamicString>();
 
-	char c = this->skipWhitespace();
+	this->skipWhitespace();
+	char c = this->stream.readChar();
 	while( !Parser::whitespace.contains(c) ) {
 		*statement.format += c;
 		c = this->stream.readChar();
 	}
+
+	if ( *statement.format != "utf8" )	throw ParseException( *this, OS"Format \"" + *statement.format + "\" is not supported" );
 	
-	c = this->skipWhitespace();
-	statement.statement = this->parseStatement( c );
+	this->skipWhitespace();
+	statement.statement = this->parseStatement();
 	
 	return statement;
 }
@@ -166,23 +245,27 @@ FormatStatement Parser::parseFormat() {
 DynamicString Parser::parseName() {
 	char c = this->stream.readChar();
 	if ( !Parser::alphabet.contains(c) && !Parser::alphabetUpper.contains(c) )
-		throw ParseException( *this, OS"First character of a name should be in the alphabet, not '" + c + ''' );
+		throw ParseException( *this, OS"First character of a name should be in the alphabet, not '" + c + '\'' );
 
 	DynamicString name( 1, c );
 
 	c = this->stream.readChar();
-	while ( Parser::alphabet.contains(c) || Parser::alpabetUpper.contains(c) || Parser::numeric.contains(c) ) {
+	while ( Parser::alphabet.contains(c) || Parser::alphabetUpper.contains(c) || Parser::numeric.contains(c) ) {
 		name += c;
 
-		c = this->stream.readChar();
+		try {
+			c = this->stream.readChar();
+		}
+		catch ( EndOfStreamException& e ) {
+			return name;
+		}
 	}
-	if ( !Parser::whitespace.contains(c) )
-		throw ParseException( *this, OS"Name not terminated with whitespace but whith character '" + c + ''' );
+	this->stream.move(-1);
 
 	return name;
 }
 
-NumberStatement Parser::parseNumber( char firstChar ) {
+NumberStatement Parser::parseNumber() {
 	return NumberStatement();
 }
 
@@ -202,8 +285,7 @@ StringStatement Parser::parseString( bool double_quoted ) {
 			statement.string->append( special_c );
 		}
 	}
-	
-	printf( "Parsed: %s %d %p %d\n", statement.string->ptr(), sizeof(DynamicString), statement.string.ptr(), sizeof(StringStatement) );
+
 	return statement;
 }
 
@@ -220,7 +302,7 @@ char Parser::_stringSpecialChar( char c ) {
 	else	throw ParseException( *this, (String<>)"Invalid special character in string literal: \"\\" + c + '\"' );
 }
 
-char Parser::skip( const StringBase& chars ) {
+void Parser::skip( const StringBase& chars ) {
 	char c;
 
 	do	{
@@ -235,9 +317,9 @@ char Parser::skip( const StringBase& chars ) {
 	}
 	while ( chars.contains( c ) );
 
-	return c;
+	this->stream.move(-1);
 }
 
-char Parser::skipWhitespace() {
-	return this->skip( Parser::whitespace );
+void Parser::skipWhitespace() {
+	this->skip( Parser::whitespace );
 }

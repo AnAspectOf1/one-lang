@@ -1,2 +1,6 @@
 One is a language for formatting data.
 An important possibility of One will be that it will be possible to use it as a programming language.
+
+The one compiler depends on libchi, which is an header-only C++ library that provides the framework for the compiler.
+
+To build the One compiler,

@@ -1,12 +1,12 @@
 #ifndef _ONE_TRACKER_STREAM_H
 #define _ONE_TRACKER_STREAM_H
 
-#include "stream.h"
 #include <chi/int.h>
+#include <chi/stream.h>
 
 namespace one {
 
-	class TrackerStream : public ReadStream {
+	class TrackerStream : public chi::ReadStream, public chi::Seekable {
 	private:
 		void _countNewlines( const chi::Buffer<> buffer ) {
 			for ( chi::Size i = 0; i < buffer.count(); i++ ) {
@@ -20,23 +20,27 @@ namespace one {
 		}
 
 	protected:
-		ReadStream* stream;
+		chi::ReadStream* stream;
+		chi::Seekable* seekable;
 		unsigned int bytes_read;
 		unsigned int newlines_read;
 		unsigned int cur_line_read;
 
 	public:
-		TrackerStream( ReadStream* stream ) : stream(stream), bytes_read(0), newlines_read(0), cur_line_read(0) {}
+		TrackerStream( chi::ReadStream* stream, chi::Seekable* seekable ) : stream(stream), seekable(seekable), bytes_read(0), newlines_read(0), cur_line_read(0) {}
 
 		unsigned int bytesRead() const	{ return this->bytes_read; }
 		unsigned int newlinesRead() const	{ return this->newlines_read; }
 		unsigned int curLineRead() const	{ return this->cur_line_read; }
 
-		chi::Buffer<> read( chi::Size size ) {
-			chi::Buffer<> buffer = this->stream->read( size );
-			this->bytes_read += size;
+		chi::Size position() const	{ return this->seekable->position(); }
+
+		void move( chi::Size pos )	{ return this->seekable->move( pos ); }
+
+		void read( chi::BufferBase& buffer ) {
+			this->stream->read( buffer );
+			this->bytes_read += buffer.count();
 			this->_countNewlines( buffer );
-			return buffer;
 		}
 
 		chi::Byte readByte() {
@@ -50,6 +54,8 @@ namespace one {
 				this->cur_line_read++;
 			return byte;
 		}
+
+		void seek( chi::Size pos )	{ return this->seekable->seek( pos ); }
 
 		void close() {
 			this->stream->close();

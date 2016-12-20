@@ -1,5 +1,5 @@
 One is a language for formatting data.
-It is intended to easily and dynamically create text and binary files with easy.
+It is intended to easily and dynamically create text and binary files with ease.
 An important possibility of One will be that it will be possible to use it as a programming language.
 There will be an application library specification that will give a standard interface to which application code can be written.
 Another way One can be used is by creating assembly code files that can be turned into application binaries.

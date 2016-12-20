@@ -1,2 +1,34 @@
 One is a language for formatting data.
+It is intended to easily and dynamically create text and binary files with easy.
 An important possibility of One will be that it will be possible to use it as a programming language.
+There will be an application library specification that will give a standard interface to which application code can be written.
+Another way One can be used is by creating assembly code files that can be turned into application binaries.
+
+A quick example of how One source code might look like:
+
+
+& "include.1" 
+
+@my.namespace (
+
+$main (
+	$myString[ emph num ] (
+		"Hello World"
+		% ($i 0, 'i < emph', 'i++')
+			"!"
+	)
+
+	#utf8 myString[3]
+)
+
+main
+
+? 'myvar == 3'  "\n"
+!               "\0"
+
+
+This will give output identical to:
+
+	Hello World!!!
+
+Encoded in UTF-8 and ending with a newline or zero byte depending on myvar.

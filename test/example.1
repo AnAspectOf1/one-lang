@@ -1,12 +1,11 @@
-$hello "Hallo"
-$world "wereld"
-
-$html (
-	$begin	"<html>"
-	$end	"</html>"
-
-	begin, "wat html", end
+$element[ tag, content ] (
+	"<", tag, ">", content, "</", tag, ">"
 )
 
-html, "\n"
-begin
+$printElement[ e element ] e
+
+$myElement element[ "html", "inhoud" ]
+
+printElement[ myElement ]
+printElement[ ( "p", "tekst" ) ]
+printElement[ element["div", "content"] ]

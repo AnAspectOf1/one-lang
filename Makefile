@@ -7,7 +7,7 @@ OBJ_EXT = o
 INCL_EXT = h
 INCL_DIR = include
 DEBUG = yes
-CHI_COMMIT = 1297b41a4b855a2faa6c7907e71d526c82a8a7d1
+CHI_COMMIT = 690faf89ae35fdb1e14005051800b21dc33840d6
 
 CC = g++
 CFLAGS = -std=c++11
@@ -33,6 +33,7 @@ CFLAGS += -I $(CHI_INCLUDE)
 build: $(BIN_DIR)/$(NAME)
 
 dep: dep/libchi
+	git -C $< checkout dev
 	git -C $< pull origin dev
 	git -C $< checkout $(CHI_COMMIT)
 

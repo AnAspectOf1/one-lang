@@ -13,9 +13,8 @@ Index Indexer::index() const {
 		CSPtr<Statement> statement = this->document->at(i);
 
 		if ( statement->type() == StatementType_Definition ) {
-			const Statement* test = statement;
-			const DefinitionStatement* definition = static_cast<const DefinitionStatement*>(test);
-			index.definitions.add( *definition->name, definition->body );
+			CSPtr<DefinitionStatement> definition = statement;
+			index.definitions.add( *definition->name, definition );
 		}
 		// TODO: Implement namespaces
 	}

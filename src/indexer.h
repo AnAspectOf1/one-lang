@@ -10,7 +10,7 @@ namespace one {
 	// The index maintains a library of all available definitions and their namespaces
 	class Index {
 	public:
-		chi::Map<chi::CSPtr<Statement>> definitions;
+		chi::Map<chi::CSPtr<DefinitionStatement>> definitions;
 		//chi::Map<Index> namespaces;
 	};
 

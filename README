@@ -3,4 +3,18 @@ An important possibility of One will be that it will be possible to use it as a 
 
 The one compiler depends on libchi, which is an header-only C++ library that provides the framework for the compiler.
 
-To build the One compiler,
+To build the One compiler, you first need libchi. This is done simply by the command:
+
+	make dep
+
+This sets up - and downloads the git repository of libchi.
+Once that is done, you can build the compiler with:
+
+	make
+
+And test-run it with:
+
+	make test
+
+This runs it with gdb and tries to compile the file test/example.1
+Have fun.

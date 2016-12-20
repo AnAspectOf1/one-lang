@@ -12,8 +12,8 @@ namespace one {
 	class Statement;
 
 	struct Parameter {
-		chi::CSPtr<chi::StringBase> name;
-		chi::CSPtr<chi::StringBase> def_name;
+		chi::CSPtr<chi::StringBase> name, type_name;
+		unsigned int name_pos, type_name_pos;
 	};
 
 	enum StatementType {
@@ -36,6 +36,8 @@ namespace one {
 		StatementType _type;
 
 	public:
+		unsigned int pos;	// The position in the file where is was found
+
 		Statement( StatementType type ) : _type(type) {}
 
 		StatementType type() const	{ return this->_type; }
@@ -83,6 +85,7 @@ namespace one {
 	class DefinitionStatement : public Statement {
 	public:
 		chi::SPtr<chi::StringBase> name;
+		unsigned int name_pos;
 		chi::LinkedList<Parameter> params;
 		chi::SPtr<Statement> body;
 
@@ -92,7 +95,8 @@ namespace one {
 	class IdentityStatement : public Statement {
 	public:
 		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
-		unsigned int line, column;	// Where it was found
+		unsigned int name_pos;
+		StatementList args;
 
 		IdentityStatement() : Statement( StatementType_Identity ) {}
 	};
@@ -100,6 +104,7 @@ namespace one {
 	class NamespaceStatement : public Statement {
 	public:
 		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
+		unsigned int name_pos;
 
 		NamespaceStatement() : Statement( StatementType_Namespace ) {}
 	};

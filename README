@@ -32,3 +32,5 @@ This will give output identical to:
 	Hello World!!!
 
 Encoded in UTF-8 and ending with a newline or zero byte depending on myvar.
+
+Currently, the project is still in very early stages of development. All work can be found on the dev branch.

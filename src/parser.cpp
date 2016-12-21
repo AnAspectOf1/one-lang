@@ -14,13 +14,13 @@ String<> Parser::numeric = "0123456789";
 String<> Parser::whitespace = " \t\r";
 
 
-FilePos Parser::filePos() const {
-	return FilePos( this->filename, this->stream->position() );
+FilePos Parser::filePos( unsigned int back ) const {
+	return FilePos( this->stream, this->filename, this->stream->position() - back );
 }
 
 StatementList Parser::parse() {
 	try {
-		return this->parseStatements(false, false);
+		return this->parseStatements(false);
 	}
 	catch ( EndOfScopeException e ) {
 		throw ParseException( this, "Stray closing parentheses ')' found" );
@@ -66,10 +66,15 @@ StatementList Parser::parse() {
 
 DefinitionStatement Parser::parseDefinition() {
 	DefinitionStatement statement;
+
+	this->skipWhitespace();
+
 	statement.name.alloc( this->parseName() );
 
+	this->skipWhitespace();
+
 	char c = this->stream->readChar();
-	if ( c == '[' )
+	if ( c == '(' )
 		statement.params = this->parseParameters();
 	else
 		this->stream->move(-1);
@@ -87,25 +92,40 @@ IdentityStatement Parser::parseIdentity() {
 	SPtr<StringBase> name; name.alloc( this->parseName() );
 	statement.names += name;
 
-	char nextChar;
-	while ( (nextChar = this->stream->readChar()) == '.' ) {
+	char c;
+	while ( (c = this->stream->readChar()) == '.' ) {
 		
 		name.alloc( this->parseName() );
 		statement.names += name;
 	}
-	if ( nextChar != '[' )
-		this->stream->move(-1);
-	else {
-		statement.args = this->parseStatements( false, true );
-		for ( Size i = 0; i < statement.args.count(); i++ ) {
-			StatementType arg_type = statement.args[i]->type();
 
-			if ( arg_type == StatementType_Definition )
-				throw ParseException( FilePos( this->filename, statement.args[i]->pos ), "Definitions not allowed in argument list" );
-			if ( arg_type == StatementType_Namespace )
-				throw ParseException( FilePos( this->filename, statement.args[i]->pos ), "Namespaces not allowed in argument list" );
+	this->stream->move(-1);
+	this->skipWhitespace();
+	c = this->stream->readChar();
+
+	// If parameter list is available
+	if ( c == '(' ) {
+		do {
+			this->skipWhitespace();	
+	
+			try {
+				CSPtr<Statement> argument = this->parseStatement();
+				if ( !argument->evaluates() )
+					throw ParseException( this, OS"Only evaluating statements are allowed as arguments, not a " + argument->typeName() + " statement", 0 );
+
+				statement.args += argument;
+
+				this->skipWhitespace();
+			}
+			catch ( EmptyStatementException& ) {}
 		}
+		while ( Parser::delimiters.contains( c = this->stream->readChar() ) );
+
+		if ( c != ')' )
+			throw ParseException( this, OS"Invalid character '" + c + "' found in identifier argument list" );
 	}
+	else
+		this->stream->move(-1);
 
 	return statement;
 }
@@ -163,12 +183,15 @@ LinkedList<Parameter> Parser::parseParameters() {
 			this->stream->move(-1);
 
 			params += this->parseParameter();
+			
+			this->skipWhitespace();
+
 			c = this->stream->readChar();
 
-			if ( c == ']' )
+			if ( c == ')' )
 				break;
 			if ( !Parser::delimiters.contains(c) )
-				throw ParseException( this, OS"Invalid character '" + c + "' found in parameter list" );
+				throw ParseException( this, OS"Invalid character '" + c + "' found in definition parameter list" );
 		}
 	}
 	while ( true );
@@ -180,7 +203,7 @@ ScopeStatement Parser::parseScope() {
 	ScopeStatement statement;
 	
 	try {
-		statement.contents = this->parseStatements( true, false );
+		statement.contents = this->parseStatements( true );
 	}
 	catch ( EndOfScopeException& e ) {}
 
@@ -189,6 +212,8 @@ ScopeStatement Parser::parseScope() {
 
 SPtr<Statement> Parser::parseStatement() {
 	SPtr<Statement> statement;
+	FilePos pos = this->filePos();
+
 	char c = this->stream->readChar();
 
 	if ( Parser::delimiters.contains(c) ) {
@@ -213,20 +238,19 @@ SPtr<Statement> Parser::parseStatement() {
 		this->stream->move(-1);
 		statement.alloc( this->parseNumber() );
 	}
-	else if ( c == '(' ) {
+	else if ( c == '{' ) {
 		statement.alloc( this->parseScope() );
 	}
-	else if ( c == ')' )
+	else if ( c == '}' )
 		throw EndOfScopeException();
-	else if ( c == ']' )
-		throw EndOfListException();
 	else
-		throw ParseException( this, OS"Character '" + c + "' does not begin a statement" );
+		throw ParseException( this, OS"Expected a new statement but found character '" + c + "' which does not begin any statement" );
 
+	statement->pos = pos;
 	return statement;
 }
 
-StatementList Parser::parseStatements( bool in_scope, bool in_list ) {
+StatementList Parser::parseStatements( bool in_scope ) {
 	StatementList stats;
 	do {
 		try {
@@ -245,24 +269,16 @@ StatementList Parser::parseStatements( bool in_scope, bool in_list ) {
 		catch ( EndOfScopeException& e ) {
 			if ( in_scope )	break;
 			// else
-			throw ParseException( this, "Stray closing parentheses ')'" );
-		}
-		catch ( EndOfListException& e ) {
-			if ( in_list )	break;
-			throw ParseException( this, "Stray closing square bracket ']'" );
+			throw ParseException( this, "Stray closing curly bracket '}'" );
 		}
 		try {
 			this->skip( Parser::whitespace );	// Skip everything except whitespaces
 			// Move over delimiter
 			char c = this->stream->readChar();
-			if ( c == ')' ) {
+			if ( c == '}' ) {
 				if ( in_scope )	break;
 				// else
-				throw ParseException( this, "Stray closing parentheses ')'" );
-			}
-			if ( c == ']' ) {
-				if ( in_list )	break;
-				throw ParseException( this, "Stray closing square bracket ']'" );
+				throw ParseException( this, "Stray closing curly bracket '}'" );
 			}
 			if ( !Parser::delimiters.contains(c) )
 				throw ParseException( this, OS"Missing delimiter or newline after statement, found '" + c + "' instead" );
@@ -352,21 +368,31 @@ char Parser::_stringSpecialChar( char c ) {
 	ONE_SPECIAL( '"', '\"' );
 	ONE_SPECIAL( '\'', '\'' );
 #undef ONE_SPECIAL
-	else	throw ParseException( this, (String<>)"Invalid special character in string literal: \"\\" + c + '\"' );
+	else	throw ParseException( this, OS"Invalid special character in string literal: \"\\" + c + '\"' );
 }
 
 void Parser::skip( const StringBase& chars ) {
 	char c;
 
-	do	{
+	do {
 		c = this->stream->readChar();
+
 		// If comment
 		if ( c == ';' ) {
+
 			// Skip everything until newline
 			do { c = this->stream->readChar(); }
 			while ( c != '\n' );
 			c = this->stream->readChar();
 		}
+
+		// If newline directive
+		/*if ( c == '\' ) {
+			do { c = this->stream->readChar(); }
+			while ( Parser::whitespace.contains(c) );
+			if ( c != '\n' )
+				throw ParseException( this, OS"Non-whitespace character '" + c + "' found after newline directive", 0 );
+		}*/
 	}
 	while ( chars.contains( c ) );
 

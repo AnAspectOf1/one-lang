@@ -1,11 +1,18 @@
-$element[ tag, content ] (
+$element ( tag, content ) {
 	"<", tag, ">", content, "</", tag, ">"
-)
+}
 
-$printElement[ e element ] e
+$printElement ( e element ) e
 
-$myElement element[ "html", "inhoud" ]
+$myElement element ( "html", "inhoud" )
 
-printElement[ myElement ]
-printElement[ ( "p", "tekst" ) ]
-printElement[ element["div", "content"] ]
+printElement( myElement )
+printElement( element ( "div", "content" ) )
+printElement( { printElement(myElement), "tekst" } )
+
+
+$print( text str );
+	text
+
+print( "Ahlo" )
+print( print("ja") )

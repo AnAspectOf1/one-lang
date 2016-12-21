@@ -12,6 +12,9 @@
 namespace one {
 
 	class Composer;
+	class Type;
+
+	class TypeNotFoundException : public Exception {};
 
 	class UnsupportedFormatException : public Exception {
 		chi::String<> format;
@@ -46,14 +49,12 @@ namespace one {
 		// The index for the local context or the argument index for the local definition
 		chi::SPtr<Index> index;
 
-		bool complies( const Statement* statement, const chi::StringBase& type_name ) const;
+		chi::CSPtr<Statement> evaluate( chi::CSPtr<Statement>& statement, const Type& type_name ) const;
+		chi::CSPtr<Statement> evaluateDefinition( const Type& type, chi::CSPtr<DefinitionStatement> statement, const chi::Map<chi::CSPtr<DefinitionStatement>>& argument_index ) const;
+		chi::CSPtr<Statement> evaluateIdentity( const Type& type, chi::CSPtr<IdentityStatement> statement ) const;
+		chi::CSPtr<Statement> evaluateScope( const Type& type, chi::CSPtr<ScopeStatement> statement ) const;
+		chi::CSPtr<Statement> evaluateStatement( const Type& type, chi::CSPtr<Statement> statement ) const;
 		chi::CSPtr<DefinitionStatement> findDefinition( const chi::StringBase& name ) const;
-
-		bool complyCheckDefinition( const ComposerContext& context, const DefinitionStatement* type, const DefinitionStatement* statement, const chi::Map<chi::CSPtr<DefinitionStatement>>& argument_index ) const;
-		bool complyCheckFormat( const ComposerContext& context, const DefinitionStatement* type, const FormatStatement* statement ) const;
-		bool complyCheckIdentity( const ComposerContext& context, const DefinitionStatement* type, const IdentityStatement* statement ) const;
-		bool complyCheckScope( const ComposerContext& context, const DefinitionStatement* type, const ScopeStatement* statement ) const;
-		bool complyCheckStatement( const ComposerContext& context, const DefinitionStatement* type, const Statement* statement ) const;
 	};
 
 	class Composer {
@@ -72,6 +73,36 @@ namespace one {
 		Composer( chi::WriteStream& stream, const StatementList* document, const chi::StringBase& filename = chi::String<>() );
 
 		void compose();
+	};
+
+	class Type {
+	protected:
+		bool _is_str;
+
+	public:
+		const DefinitionStatement* def;
+
+		Type( const DefinitionStatement* def ) : def(def) {}
+		Type( bool is_str ) : _is_str(is_str), def(0) {}
+		Type( const ComposerContext* context, const chi::StringBase& type_name ) {
+			if ( type_name == "str" ) {
+				this->def = 0;
+				this->_is_str = true;
+			}
+			else if ( type_name == "num" ) {
+				this->def = 0;
+				this->_is_str = false;
+			}
+			else {
+				this->def = context->findDefinition( type_name );
+				if ( this->def == 0 )
+					throw TypeNotFoundException();
+			}
+		}
+
+		bool is_def() const	{ return this->def != 0; }
+		bool is_num() const	{ return this->def == 0 && !this->_is_str; }
+		bool is_str() const	{ return this->def == 0 && this->_is_str; }
 	};
 }
 

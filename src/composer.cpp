@@ -62,27 +62,33 @@ void Composer::composeIdentity( const ComposerContext& context, const IdentitySt
 	CSPtr<StringBase> name = statement->names.last();
 
 	CSPtr<DefinitionStatement> definition = context.findDefinition( *name );
-	if ( definition == 0 ) {
-		ONE_ASSERT( true, "No definition %s exist in that context", name->ptr() );	
-	}
+	if ( definition == 0 )
+		throw ParseException( statement->pos, OS"Definition \"" + *name + "\" not found" );
 
 	// Check if the same number of arguments are given than that there are parameters
 	if ( definition->params.count() != statement->args.count() )
-		throw ParseException( FilePos( *context.filename, statement->name_pos + name->length() ), "Not the same amount of arguments given as that there are parameters" );
+		throw ParseException( statement->pos.move( statement->name_pos + name->length() ), "Not the same amount of arguments given as that there are parameters" );
 
 	// Check for each parameter if the given argument is of the correct type and add them to a map
 	Map<CSPtr<DefinitionStatement>> argument_index;
 	for ( Size i = 0; i < definition->params.count(); i++ ) {
 		Parameter param = definition->params[i];
 		CSPtr<Statement> arg = statement->args[i];
+		CSPtr<Statement> evaluated = arg;
 
-		if ( param.type_name->length() > 0 ) {
-			if ( !context.complies( arg, *param.type_name ) )
-				throw ParseException( FilePos( *context.filename, arg->pos ), OS"Argument not of type \"" + *param.type_name + "\"." );
+		if ( param.type_name != 0 ) {
+			try {
+				evaluated = context.evaluateStatement( Type( &context, *param.type_name ), evaluated );
+			}
+			catch ( TypeNotFoundException& ) {
+				throw ParseException( arg->pos.move( param.type_name_pos ), OS"No definition was found for type name \"" + *param.type_name + '"' );
+			}
+			if ( evaluated == 0 )
+				throw ParseException( arg->pos, OS"Argument not of type \"" + *param.type_name + '\"' );
 		}
 
 		DefinitionStatement arg_def;
-		arg_def.pos = param.name_pos;
+		arg_def.pos = definition->pos.move( param.name_pos );
 		arg_def.name = param.name;
 		arg_def.name_pos = param.name_pos;
 		arg_def.body = arg;
@@ -102,90 +108,68 @@ void Composer::composeString( const ComposerContext& context, const StringStatem
 }
 
 
-bool ComposerContext::complies( const Statement* statement, const StringBase& type_name ) const {
+CSPtr<Statement> ComposerContext::evaluate( CSPtr<Statement>& statement, const Type& type ) const {
 
-	// Expand scopes by evaluating its first element
-	if ( statement->type() == StatementType_Scope ) {
-		const ScopeStatement* scope = (const ScopeStatement*)statement;
-
-		// If the scope is empty, it can never be evaluated to some other statement
-		if ( scope->contents.count() == 0 )
-			return false;
-		
-		return this->complies( scope->contents[0], type_name );
-	}
-
-	// Built-in string literal type
-	if ( statement->type() == StatementType_String )
-		return type_name == "str";
-
-	// Built-in number literal type
-	if ( statement->type() == StatementType_Number )
-		return type_name == "num";
-
-	// Check if identity's evaluated statement complies with the type's definition
-	if ( statement->type() == StatementType_Identity ) {
-		const IdentityStatement* identity = (const IdentityStatement*)statement;
-		
-		CSPtr<DefinitionStatement> type_definition = this->findDefinition( type_name );
-		return this->complyCheckIdentity( this, type_definition, identity );
-	}
-
-	// There is no other statement that can statisfy a type check
-	return false;
+	return 0;
 }
 
-bool ComposerContext::complyCheckDefinition( const ComposerContext& context, const DefinitionStatement* type, const DefinitionStatement* statement, const Map<CSPtr<DefinitionStatement>>& argument_index ) const {
-	ComposerContext sub_context( &context );
+CSPtr<Statement> ComposerContext::evaluateDefinition( const Type& type, CSPtr<DefinitionStatement> statement, const Map<CSPtr<DefinitionStatement>>& argument_index ) const {
+	ComposerContext sub_context( this );
 	sub_context.index.alloc();
 	sub_context.index->definitions = argument_index;
 
-	return this->complyCheckStatement( context, type, statement->body );
+	return sub_context.evaluateStatement( type, statement->body );
 }
 
-bool ComposerContext::complyCheckFormat( const ComposerContext& context, const DefinitionStatement* type, const FormatStatement* statement ) const {
-	return this->complyCheckStatement( context, type, statement->statement );
-}
-
-bool ComposerContext::complyCheckIdentity( const ComposerContext& context, const DefinitionStatement* type, const IdentityStatement* statement ) const {
+CSPtr<Statement> ComposerContext::evaluateIdentity( const Type& type, CSPtr<IdentityStatement> statement ) const {
 	CSPtr<DefinitionStatement> definition = this->findDefinition( *statement->names.last() );
 
-	if ( definition == type )
-		return true;
+	// If this identity turns out to be of the definition 'type', this is the identity to which we evaluate
+	if ( definition == type.def )
+		return statement;
 
+	// Otherwise we expand the definition
 	Map<CSPtr<DefinitionStatement>> argument_index;
 	for ( Size i = 0; i < definition->params.count(); i++ ) {
 		DefinitionStatement def;
-		def.pos = definition->params[i].name_pos;
+		def.pos = definition->pos.move( definition->params[i].name_pos );
 		def.name = definition->params[i].name;
-		def.name_pos = def.pos;
+		def.name_pos = def.pos.pos;
 		def.body = statement->args[0];
 
 		argument_index.add( *definition->params[i].name, CSPtr<DefinitionStatement>::allocNew( def ) );
 	}
 
-	return this->complyCheckDefinition( context, type, definition, argument_index );
+	return this->evaluateDefinition( type, definition, argument_index );
 }
 
-bool ComposerContext::complyCheckScope( const ComposerContext& context, const DefinitionStatement* type, const ScopeStatement* statement ) const {
+CSPtr<Statement> ComposerContext::evaluateScope( const Type& type, CSPtr<ScopeStatement> statement ) const {
 	if ( statement->contents.size() == 0 )
-		return false;
+		return 0;
 
-	return this->complyCheckStatement( context, type, statement->contents[0] );
+	for ( Size i = 0; i < statement->contents.size(); i++ ) {
+		CSPtr<Statement> content = statement->contents[i];
+		// The first line in a scope that is of the following types get evaluated
+		if ( content->type() == StatementType_Identity || content->type() == StatementType_Number || content->type() == StatementType_String )
+			return this->evaluateStatement( type, content );
+	}
+
+	// If no line has been found of those types, we give up
+	return 0;
 }
 
-bool ComposerContext::complyCheckStatement( const ComposerContext& context, const DefinitionStatement* type, const Statement* statement ) const {
+CSPtr<Statement> ComposerContext::evaluateStatement( const Type& type, CSPtr<Statement> statement ) const {
 
-	if ( statement->type() == StatementType_Definition )
-		return type == (const DefinitionStatement*)statement;
-	//if ( statement->type() == StatementType_Format )
-	//	return this->complyCheckFormat( context, (const FormatStatement*)statement );
 	if ( statement->type() == StatementType_Identity )
-		return this->complyCheckIdentity( context, type, (const IdentityStatement*)statement );
+		return this->evaluateIdentity( type, statement.cast<IdentityStatement>() );
 	if ( statement->type() == StatementType_Scope )
-		return this->complyCheckScope( context, type, (const ScopeStatement*)statement );
-	//else
-		return false;
+		return this->evaluateScope( type, statement.cast<ScopeStatement>() );
+	if ( statement->type() == StatementType_Number )
+		return type.is_num() ? statement : 0;
+	if ( statement->type() == StatementType_String )
+		return type.is_str() ? statement : 0;
+	// Else, when the statement can't be evaluated any further, the 0 pointer describes that no deeper definition could be found
+	return 0;
 }
 
 CSPtr<DefinitionStatement> ComposerContext::findDefinition( const StringBase& name ) const {

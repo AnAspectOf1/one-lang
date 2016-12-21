@@ -9,6 +9,7 @@
 #include <chi/ptr.h>
 #include <chi/stream.h>
 #include <chi/string.h>
+#include <type_traits>
 
 
 namespace one {
@@ -30,7 +31,7 @@ namespace one {
 
 	protected:
 		chi::ReadSeekStream* stream;
-		chi::String<> filename;
+		chi::CSPtr<chi::String<>> filename;
 
 		static chi::String<> delimiters;
 		static chi::String<> whitespace;
@@ -43,7 +44,7 @@ namespace one {
 		Parameter parseParameter();
 		chi::LinkedList<Parameter> parseParameters();
 		ScopeStatement parseScope();
-		StatementList parseStatements( bool in_scope, bool in_list );
+		StatementList parseStatements( bool in_scope );
 		FormatStatement parseFormat();
 		chi::DynamicString parseName();
 		NumberStatement parseNumber();
@@ -53,26 +54,32 @@ namespace one {
 		void skipWhitespace();
 
 	public:
-		Parser( chi::ReadSeekStream* stream, const chi::StringBase& filename ) : stream( stream ), filename(filename) {}
-		Parser( chi::ReadSeekStream* stream, const char* filename = "" ) : stream( stream ), filename(filename) {}
+		template <class S>
+		Parser( chi::ReadSeekStream* stream, const S& filename ) : stream( stream ) {
+			static_assert( std::is_base_of<chi::StringBase, S>::value, "Argument filename must derive from StringBase" );
+			this->filename.alloc( filename );
+		}
+		Parser( chi::ReadSeekStream* stream, const char* filename = "" ) : stream( stream ) {
+			this->filename.alloc( chi::String<>( filename ) );
+		}
 
-		FilePos filePos() const;
+		FilePos filePos( unsigned int back = 0 ) const;
 
 		StatementList parse();
 	};
 
-	class ParseException : public ParserException {
+	class ParseException : public Exception {
 	protected:
 		const chi::String<> msg;
 
 	public:
 		const FilePos file_pos;
 
-		ParseException( const Parser* parser, const char* message, unsigned int back = 1 ) : msg(message), file_pos(parser->filename, parser->stream->position() - back) {}
-		ParseException( const Parser* parser, const chi::StringBase& message, unsigned int back = 1 ) : msg(message), file_pos(parser->filename, parser->stream->position() - back) {}
+		ParseException( const Parser* parser, const char* message, chi::Size back = 1 ) : msg(message), file_pos(parser->filePos(back)) {}
+		ParseException( const Parser* parser, const chi::StringBase& message, chi::Size back = 1 ) : msg(message), file_pos(parser->filePos(back)) {}
 		ParseException( const FilePos& file_pos, const chi::StringBase& message ) : msg(message), file_pos(file_pos) {}
 		ParseException( const FilePos& file_pos, const char* message ) : msg(message), file_pos(file_pos) {}
-		ParseException( const chi::StringBase& filename, unsigned int pos, const chi::StringBase& message ) : msg(message), file_pos( filename, pos ) {}
+		ParseException( chi::ReadSeekStream* file, chi::CSPtr<chi::StringBase>& filename, chi::Size pos, const chi::StringBase& message ) : msg(message), file_pos( file, filename, pos ) {}
 
 		const chi::StringBase& message() const	{ return this->msg; }
 	};

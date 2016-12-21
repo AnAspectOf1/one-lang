@@ -7,7 +7,7 @@ OBJ_EXT = o
 INCL_EXT = h
 INCL_DIR = include
 DEBUG = yes
-CHI_COMMIT = 690faf89ae35fdb1e14005051800b21dc33840d6
+CHI_COMMIT = 86f99e024045197f8a902c23e7e7ca9baf27a72a
 
 CC = g++
 CFLAGS = -std=c++11
@@ -22,7 +22,7 @@ HEAD_FILES = $(shell find $(SRC_DIR) -name *.$(INCL_EXT))
 INCL_FILES = $(patsubst $(SRC_DIR)/%.h,$(INCL_DIR)/$(PATH_NAME)/%.h,$(HEAD_FILES))
 
 ifeq ($(DEBUG),yes)
-CFLAGS += -g -O0 -Wall -Wextra
+CFLAGS += -g -O0 -Wall -Wextra -lefence
 LDFLAGS += -rdynamic
 endif
 CFLAGS += -I $(CHI_INCLUDE)

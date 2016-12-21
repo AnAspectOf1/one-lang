@@ -1,5 +1,6 @@
 #include "composer.h"
 #include "exception.h"
+#include "file.h"
 #include "parser.h"
 #include <chi/exception.h>
 #include <chi/file.h>
@@ -18,19 +19,41 @@ struct FilePosInfo {
 	unsigned int line_nr, column;
 };
 
-FilePosInfo findFilePos( ReadSeekStream* stream, unsigned int pos ) {
-	stream->seek( 0 );
+FilePosInfo findFilePos( const FilePos& pos ) {
+	pos.file->seek( 0 );
 
 	FilePosInfo info;
-	/*info.line = stream->readLine();
-	info.line_nr = 1;
-	while ( pos > info.line.length() ) {
-		pos -= info.line.length();
-		info.line = stream->readLine();
+	info.line = pos.file->readLine();
+	info.line_nr = 0;
+	unsigned int our_pos = pos.pos;
+	while ( our_pos > info.line.length() ) {
+		our_pos -= info.line.length() + 1;
+		info.line = pos.file->readLine();
 		info.line_nr++;
-	}*/
+	}
+	info.column = our_pos;
 
 	return info;
+}
+
+String<> mimicSpace( const char* line, const Size length ) {
+	String<> space( length, ' ' );
+
+	for ( Size i = 0; i < length; i++ ) {
+		if ( line[i] == '\t' )
+			space[i] = '\t';
+	}
+
+	return space;
+}
+
+void printParseException( const ParseException& e) {
+	FilePosInfo info = findFilePos( e.file_pos );
+	if ( *e.file_pos.filename == "" ) 
+		fprintf( stderr, "Parse error on line %d, column %d:\t%s.\n\t%s\n", info.line_nr+1, info.column+1, e.message().ptr(), info.line.ptr() );
+	else
+		fprintf( stderr, "Parse error in %s:%d:%d:\t%s.\n\t%s\n", e.file_pos.filename->ptr(), info.line_nr+1, info.column+1, e.message().ptr(), info.line.ptr() );
+	fprintf( stderr, "\t%s^\n", mimicSpace( info.line.ptr(), info.column ).ptr() );
 }
 
 
@@ -42,28 +65,28 @@ int main( int argc, const char** argv ) {
 		StdoutStream stdout;
 
 		StatementList document;
-		ReadSeekStream* input_stream;
 
-		try {
-			if ( argc < 2 ) {
-				input_stream = &buffered_stdin;
+		if ( argc < 2 ) {
+			try {
 				document = Parser( &buffered_stdin ).parse();
+				Composer( stdout, &document ).compose();
 			}
-			else {
-				const char* filename = argv[1];
-				ReadFile input_file = ReadFile::open( filename );
-				input_stream = &input_file;
-				document = Parser( &input_file, filename ).parse();
+			catch ( ParseException& e ) {
+				printParseException( e );
+				return 1;
 			}
-
-			Composer( stdout, &document ).compose();
 		}
-		catch ( ParseException& e ) {
-			FilePosInfo info = findFilePos( input_stream, e.file_pos.pos );
-			if ( e.file_pos.filename == "" ) 
-				fprintf( stderr, "Parse error on line %d, column %d: %s.\n\t%s\n", info.line_nr, info.column, e.message().ptr(), info.line.ptr() );
-			else
-				fprintf( stderr, "Parse error in %s:%d:%d: %s.\n\t%s\n", e.file_pos.filename.ptr(), info.line_nr, info.column, e.message().ptr(), info.line.ptr() );
+		else {
+			const char* filename = argv[1];
+			ReadFile input_file = ReadFile::open( filename );
+			try {
+				document = Parser( &input_file, filename ).parse();
+				Composer( stdout, &document ).compose();
+			}
+			catch ( ParseException& e ) {
+				printParseException( e );
+				return 1;
+			}
 		}
 	}
 	catch ( chi::AllocException& e ) {

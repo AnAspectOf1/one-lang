@@ -1,6 +1,7 @@
 #ifndef _ONE_STATEMENT_H
 #define _ONE_STATEMENT_H
 
+#include "file.h"
 #include <chi/linked.h>
 #include <chi/ptr.h>
 #include <chi/string.h>
@@ -13,20 +14,13 @@ namespace one {
 
 	struct Parameter {
 		chi::CSPtr<chi::StringBase> name, type_name;
-		unsigned int name_pos, type_name_pos;
+		chi::Size name_pos, type_name_pos;
 	};
 
 	enum StatementType {
-		StatementType_Break,            // A break
 		StatementType_Definition,       // A new definition
 		StatementType_Identity,         // A value based on an existing definition
-		StatementType_Else,             // An else statement
 		StatementType_Format,           // A format specifier
-		StatementType_If,               // An if statement
-		StatementType_Include,          // Inclusion of some file
-		StatementType_Loop,             // A loop statement
-		StatementType_Math,             // Math mode
-		StatementType_Namespace,        // Declaration of namespace
 		StatementType_Number,           // A value based on a literal number
 		StatementType_Scope,            // A list of statements in a subcontext
 		StatementType_String            // A value based on a string
@@ -36,13 +30,28 @@ namespace one {
 		StatementType _type;
 
 	public:
-		unsigned int pos;	// The position in the file where is was found
+		FilePos pos;	// The file and position where it was found
 
 		Statement( StatementType type ) : _type(type) {}
 
 		StatementType type() const	{ return this->_type; }
 
 		virtual ~Statement() {}
+
+		virtual bool evaluates() const	{ return false; }
+
+		chi::String<> typeName() const {
+			static chi::String<> names[] = {
+				"definition",
+				"identity",
+				"format",
+				"number",
+				"scope",
+				"string"
+			};
+
+			return names[ this->_type ];
+		}
 	};
 
 	typedef chi::LinkedList<chi::CSPtr<Statement>> StatementList;
@@ -75,19 +84,19 @@ namespace one {
 				this->vector.pop_back();
 			}
 		}
-	};*/
+	};
 
 	class BreakStatement : public Statement {
 	public:
 		BreakStatement() : Statement( StatementType_Break ) {}
-	};
+	};*/
 
 	class DefinitionStatement : public Statement {
 	public:
-		chi::SPtr<chi::StringBase> name;
+		chi::CSPtr<chi::StringBase> name;
 		unsigned int name_pos;
 		chi::LinkedList<Parameter> params;
-		chi::SPtr<Statement> body;
+		chi::CSPtr<Statement> body;
 
 		DefinitionStatement() : Statement( StatementType_Definition ) {}
 	};
@@ -99,21 +108,25 @@ namespace one {
 		StatementList args;
 
 		IdentityStatement() : Statement( StatementType_Identity ) {}
+
+		bool evaluates() const override	{ return true; }
 	};
 
-	class NamespaceStatement : public Statement {
+	/*class NamespaceStatement : public Statement {
 	public:
 		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
 		unsigned int name_pos;
 
 		NamespaceStatement() : Statement( StatementType_Namespace ) {}
-	};
+	};*/
 
 	class NumberStatement : public Statement {
 	public:
 		long long number;	// TODO: Import the BigInt class from my nctp project
 
 		NumberStatement( long long number = 0 ) : Statement( StatementType_Number ), number(number) {}
+
+		bool evaluates() const override	{ return true; }
 	};
 
 	class StringStatement : public Statement {
@@ -122,6 +135,8 @@ namespace one {
 
 		StringStatement() : Statement( StatementType_String ) {}
 		StringStatement( const StringStatement& other ) : Statement( StatementType_String ), string( other.string ) {}
+
+		bool evaluates() const override	{ return true; }
 	};
 
 	class FormatStatement : public Statement {
@@ -137,6 +152,8 @@ namespace one {
 		StatementList contents;
 
 		ScopeStatement() : Statement( StatementType_Scope ) {}
+	
+		bool evaluates() const override	{ return true; }
 	};
 }
 

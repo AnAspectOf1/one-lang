@@ -133,11 +133,12 @@ IdentityStatement Parser::parseIdentity() {
 				throw ParseException( this, OS"Only evaluating statements are allowed as arguments, not a " + argument->typeName() + " statement", 0 );
 
 			statement.args += argument;
-
-			this->skipWhitespace();
 		}
 		catch ( EmptyStatementException& ) {}
 		catch ( EndOfScopeException& ) { break; }
+
+		this->skipWhitespace();
+		c = this->stream->readChar();
 	}
 	this->stream->move(-1);
 

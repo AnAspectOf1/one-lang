@@ -66,8 +66,8 @@ void Composer::composeIdentity( const ComposerContext& context, const IdentitySt
 		throw ParseException( statement->pos, OS"Definition \"" + *name + "\" not found" );
 
 	// Check if the same number of arguments are given than that there are parameters
-	if ( definition->params.count() != statement->args.count() )
-		throw ParseException( statement->pos.move( statement->name_pos + name->length() ), "Not the same amount of arguments given as that there are parameters" );
+	if ( definition->params.count() != statement->args.count() ) {
+		throw ParseException( statement->pos, "Not the same amount of arguments given as that there are parameters" ); }
 
 	// Check for each parameter if the given argument is of the correct type and add them to a map
 	Map<CSPtr<DefinitionStatement>> argument_index;

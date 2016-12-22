@@ -19,7 +19,7 @@ namespace one {
 
 	class ParserException : public Exception {};
 	class EmptyStatementException : public ParserException {};
-	class EndOfListException : public ParserException {};
+	class EndOfLineException : public ParserException {};
 	class EndOfScopeException : public ParserException {};
 
 

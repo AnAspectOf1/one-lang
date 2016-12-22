@@ -86,6 +86,25 @@ DefinitionStatement Parser::parseDefinition() {
 	return statement;
 }
 
+FormatStatement Parser::parseFormat() {
+	FormatStatement statement;
+	statement.format.alloc<DynamicString>();
+
+	this->skipWhitespace();
+	char c = this->stream->readChar();
+	while( !Parser::whitespace.contains(c) ) {
+		*statement.format += c;
+		c = this->stream->readChar();
+	}
+
+	if ( *statement.format != "utf8" )	throw ParseException( this, OS"Format \"" + *statement.format + "\" is not supported" );
+	
+	this->skipWhitespace();
+	statement.statement = this->parseStatement();
+	
+	return statement;
+}
+
 IdentityStatement Parser::parseIdentity() {
 	IdentityStatement statement;
 	
@@ -103,31 +122,51 @@ IdentityStatement Parser::parseIdentity() {
 	this->skipWhitespace();
 	c = this->stream->readChar();
 
-	// If parameter list is available
-	if ( c == '(' ) {
-		do {
-			this->skipWhitespace();	
-	
-			try {
-				CSPtr<Statement> argument = this->parseStatement();
-				if ( !argument->evaluates() )
-					throw ParseException( this, OS"Only evaluating statements are allowed as arguments, not a " + argument->typeName() + " statement", 0 );
-
-				statement.args += argument;
-
-				this->skipWhitespace();
-			}
-			catch ( EmptyStatementException& ) {}
-		}
-		while ( Parser::delimiters.contains( c = this->stream->readChar() ) );
-
-		if ( c != ')' )
-			throw ParseException( this, OS"Invalid character '" + c + "' found in identifier argument list" );
-	}
-	else
+	// Keep looking for arguments until a delimiter is found
+	while ( !Parser::delimiters.contains(c) ) {
 		this->stream->move(-1);
+		this->skipWhitespace();	
+	
+		try {
+			CSPtr<Statement> argument = this->parseStatement();
+			if ( !argument->evaluates() )
+				throw ParseException( this, OS"Only evaluating statements are allowed as arguments, not a " + argument->typeName() + " statement", 0 );
+
+			statement.args += argument;
+
+			this->skipWhitespace();
+		}
+		catch ( EmptyStatementException& ) {}
+		catch ( EndOfScopeException& ) { break; }
+	}
+	this->stream->move(-1);
 
 	return statement;
+}
+
+
+
+DynamicString Parser::parseName() {
+	char c = this->stream->readChar();
+	if ( !Parser::alphabet.contains(c) && !Parser::alphabetUpper.contains(c) )
+		throw ParseException( this, OS"First character of a name should be in the alphabet, not '" + c + '\'' );
+
+	DynamicString name( 1, c );
+
+	c = this->stream->readChar();
+	while ( Parser::alphabet.contains(c) || Parser::alphabetUpper.contains(c) || Parser::numeric.contains(c) ) {
+		name += c;
+
+		try {
+			c = this->stream->readChar();
+		}
+		catch ( EndOfStreamException& e ) {
+			return name;
+		}
+	}
+	this->stream->move(-1);
+
+	return name;
 }
 
 /*NamespaceStatement Parser::parseNamespace() {
@@ -153,6 +192,10 @@ IdentityStatement Parser::parseIdentity() {
 
 	return statement;
 }*/
+
+NumberStatement Parser::parseNumber() {
+	return NumberStatement();
+}
 
 Parameter Parser::parseParameter() {
 	Parameter param;
@@ -201,11 +244,9 @@ LinkedList<Parameter> Parser::parseParameters() {
 
 ScopeStatement Parser::parseScope() {
 	ScopeStatement statement;
-	
-	try {
-		statement.contents = this->parseStatements( true );
-	}
-	catch ( EndOfScopeException& e ) {}
+
+	statement.contents = this->parseStatements( true );
+	throw ParseException( this, "Where are you now?", 0 );
 
 	return statement;
 }
@@ -255,33 +296,29 @@ StatementList Parser::parseStatements( bool in_scope ) {
 	do {
 		try {
 			this->skipWhitespace();
-		}
-		catch ( EndOfStreamException e ) {
-			break;
-		}
-		try {
-			stats += this->parseStatement();
-		}
-		catch ( EmptyStatementException e ) {}
-		catch ( EndOfStreamException e ) {
-			throw ParseException( this, "Unexpected end of file" );
+
+			try {
+				stats += this->parseStatement();
+			}
+			catch ( EmptyStatementException e ) {}
+			catch ( EndOfStreamException e ) {
+				throw ParseException( this, "Unexpected end of file" );
+			}
+
+			this->skipWhitespace();	// Skip everything except whitespaces
+
+			// Move over delimiter
+			char c = this->stream->readChar();
+			if ( c == '}' )
+				throw EndOfScopeException();
+			printf("c: %c\n", c );
+			if ( !Parser::delimiters.contains(c) )
+				throw ParseException( this, OS"Missing delimiter (',' or newline) after statement, found '" + c + "' instead" );
 		}
 		catch ( EndOfScopeException& e ) {
 			if ( in_scope )	break;
 			// else
 			throw ParseException( this, "Stray closing curly bracket '}'" );
-		}
-		try {
-			this->skip( Parser::whitespace );	// Skip everything except whitespaces
-			// Move over delimiter
-			char c = this->stream->readChar();
-			if ( c == '}' ) {
-				if ( in_scope )	break;
-				// else
-				throw ParseException( this, "Stray closing curly bracket '}'" );
-			}
-			if ( !Parser::delimiters.contains(c) )
-				throw ParseException( this, OS"Missing delimiter or newline after statement, found '" + c + "' instead" );
 		}
 		catch ( EndOfStreamException e ) {
 			break;
@@ -290,52 +327,6 @@ StatementList Parser::parseStatements( bool in_scope ) {
 	while ( true );
 
 	return stats;
-}
-
-FormatStatement Parser::parseFormat() {
-	FormatStatement statement;
-	statement.format.alloc<DynamicString>();
-
-	this->skipWhitespace();
-	char c = this->stream->readChar();
-	while( !Parser::whitespace.contains(c) ) {
-		*statement.format += c;
-		c = this->stream->readChar();
-	}
-
-	if ( *statement.format != "utf8" )	throw ParseException( this, OS"Format \"" + *statement.format + "\" is not supported" );
-	
-	this->skipWhitespace();
-	statement.statement = this->parseStatement();
-	
-	return statement;
-}
-
-DynamicString Parser::parseName() {
-	char c = this->stream->readChar();
-	if ( !Parser::alphabet.contains(c) && !Parser::alphabetUpper.contains(c) )
-		throw ParseException( this, OS"First character of a name should be in the alphabet, not '" + c + '\'' );
-
-	DynamicString name( 1, c );
-
-	c = this->stream->readChar();
-	while ( Parser::alphabet.contains(c) || Parser::alphabetUpper.contains(c) || Parser::numeric.contains(c) ) {
-		name += c;
-
-		try {
-			c = this->stream->readChar();
-		}
-		catch ( EndOfStreamException& e ) {
-			return name;
-		}
-	}
-	this->stream->move(-1);
-
-	return name;
-}
-
-NumberStatement Parser::parseNumber() {
-	return NumberStatement();
 }
 
 StringStatement Parser::parseString( bool double_quoted ) {

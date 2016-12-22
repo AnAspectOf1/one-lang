@@ -23,7 +23,7 @@ StatementList Parser::parse() {
 		return this->parseStatements(false);
 	}
 	catch ( EndOfScopeException e ) {
-		throw ParseException( this, "Stray closing parentheses ')' found" );
+		throw ParseException( this, "Stray closing curly bracket '}' found" );
 	}
 }
 

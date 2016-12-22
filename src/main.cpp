@@ -23,15 +23,20 @@ FilePosInfo findFilePos( const FilePos& pos ) {
 	pos.file->seek( 0 );
 
 	FilePosInfo info;
-	info.line = pos.file->readLine();
-	info.line_nr = 0;
-	unsigned int our_pos = pos.pos;
-	while ( our_pos > info.line.length() ) {
-		our_pos -= info.line.length() + 1;
+	try {
 		info.line = pos.file->readLine();
-		info.line_nr++;
+		info.line_nr = 0;
+		unsigned int our_pos = pos.pos;
+		while ( our_pos > info.line.length() ) {
+			our_pos -= info.line.length() + 1;
+			info.line = pos.file->readLine();
+			info.line_nr++;
+		}
+		info.column = our_pos;
 	}
-	info.column = our_pos;
+	catch ( EndOfStreamException& e ) {
+		fprintf(stderr, "Can't find position %d in file.\n", pos.pos );
+	}
 
 	return info;
 }

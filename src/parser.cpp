@@ -247,7 +247,6 @@ ScopeStatement Parser::parseScope() {
 	ScopeStatement statement;
 
 	statement.contents = this->parseStatements( true );
-	throw ParseException( this, "Where are you now?", 0 );
 
 	return statement;
 }
@@ -310,9 +309,9 @@ StatementList Parser::parseStatements( bool in_scope ) {
 
 			// Move over delimiter
 			char c = this->stream->readChar();
+
 			if ( c == '}' )
 				throw EndOfScopeException();
-			printf("c: %c\n", c );
 			if ( !Parser::delimiters.contains(c) )
 				throw ParseException( this, OS"Missing delimiter (',' or newline) after statement, found '" + c + "' instead" );
 		}

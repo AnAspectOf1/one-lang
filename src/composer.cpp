@@ -91,7 +91,7 @@ void Composer::composeIdentity( const ComposerContext& context, const IdentitySt
 		arg_def.pos = definition->pos.move( param.name_pos );
 		arg_def.name = param.name;
 		arg_def.name_pos = param.name_pos;
-		arg_def.body = arg;
+		arg_def.body = evaluated;
 		argument_index.add( *param.name, CSPtr<DefinitionStatement>::allocNew( arg_def ) );
 	}
 

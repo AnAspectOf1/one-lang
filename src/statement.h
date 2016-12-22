@@ -104,7 +104,6 @@ namespace one {
 	class IdentityStatement : public Statement {
 	public:
 		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
-		unsigned int name_pos;
 		StatementList args;
 
 		IdentityStatement() : Statement( StatementType_Identity ) {}

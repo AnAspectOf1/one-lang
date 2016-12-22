@@ -1,0 +1,30 @@
+#!/usr/local/bin/mylang
+
+& myfile.ext
+
+$ main	# The main definition
+	my.namespace.definition
+
+@ my.namespace
+
+$ variable 'hoi'
+
+$ ip_addr [ a uint8, b uint8, c uint8, d uint8 ] 
+
+$ definition [ argument text ]
+	argument
+
+	? variable = 'hoi'
+		my-code-if-true
+	! my-code-if-else
+
+	# While loop:
+	$ i	0
+	% i < 10
+		do-something
+		: i++	# Math mode
+
+	# For loop:
+	% ( i = 0, i < 10, i++ )
+		~	# Break....
+

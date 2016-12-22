@@ -1,0 +1,66 @@
+; In One you can define definitions which allow you to put a statement (or a bunch of statements) under a name.
+; For example:
+$author "Anonymous"
+
+; If we now wish to output something with the value we've defined $author to be, we simple repeat its name without the '$' character:
+"Credits go to ", author, ".\n"
+; Here author is called an identity statement.
+
+; Now for something more useful.
+; We can also use parameters for our definitions.
+; Lets use (very) simple XML tags for example:
+$tag (name str, content);
+	"<", name, ">", content, "</", name, ">"
+; Each parameter consists of either one or two names.
+; The first name indicates the name that can be used within the definition's body to specify where it will be placed when the definition is expanded.
+; The second (optional) name may specify a type.
+; When the type is str or num, a string or number literal is requested.
+; We can now use it like so:
+tag "html" {
+	tag "body" {
+		tag "p";
+			"Some content here..."
+	}
+}
+"\n"
+
+; To get back to types, we can also use our own definitions as types.
+; For example, lets assume we want to print an HTML document, given a head and body element.
+$html (head head_tag, body body_tag);
+	"<!DOCTYPE html>\n"
+	tag "html" {
+		head
+		body
+	}
+$head_tag (content);
+	tag "head" content
+$body_tag (content);
+	tag "body" content
+
+; Now, in order to use our html definition, we can only provide statements as arguments that evaluate to that definition.
+; For any identity statment, the only statement types allowed as arguments is one of the following:
+;	identity, string, number or scope statements.
+; A string or number statement is understandable.
+; A scope statement will be evaluated to its first evaluating element, for reasons explained in a little while.
+; An identity statement evaluates to its definition's body, filled with the given arguments.
+; So we can do the following things:
+html;
+	head_tag tag "title" "My Page"
+	body_tag tag "p" "Some content here..."
+
+$title_head head_tag tag "title" "My Page"
+$content_body body_tag tag "p" "Some content here..."
+html title_head content_body
+; And both will output the same thing
+
+; The reason a scope statement evaluates to its first evaluating statment is because we then can use scopes to expand certain definitions.
+; This is very much like deriving classes in other languages.
+; We can do the following:
+$some_things;
+	title_head
+	"Some extra data"
+
+; Now the definition some_things can still be used as a head_tag type, since some_things evaluates to title_head, and title_head evaluates to an head_tag statement:
+html some_things content_body
+
+; And now we've just printed the same HTML page three times!

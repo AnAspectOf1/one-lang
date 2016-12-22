@@ -1,0 +1,7 @@
+.gitignore
+
+bin
+dep
+src/*.o
+
+*~

@@ -4,7 +4,7 @@ using namespace chi;
 using namespace one;
 
 
-Type::Type( const DefinitionStatement* def ) : def(def) {}
+Type::Type( const Definition* def ) : def(def) {}
 
 Type::Type( bool is_str ) : _is_str(is_str), def(0) {}
 

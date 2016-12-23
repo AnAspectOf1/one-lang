@@ -25,7 +25,7 @@ void Composer::composeScope( const Context& context, const ScopeStatement* state
 	Context sub_context( &context );
 
 	// Index all definitions of our sub-context before we compose our sub-context
-	sub_context.index.alloc( Indexer( &statement->contents ).index() );
+	sub_context.index.alloc( Indexer( &statement->contents ).index( context.index ) );
 
 	this->composeStatements( sub_context, statement->contents );
 }
@@ -61,9 +61,10 @@ void Composer::composeFormat( const Context& context, const FormatStatement* sta
 
 void Composer::composeIdentity( const Context& context, const IdentityStatement* statement ) {	
 	CSPtr<StringBase> name = statement->names.last();
-	printf("Identity: %s\n", name->ptr());
+	//printf("Identity: %s\n", name->ptr());
 
-	CSPtr<DefinitionStatement> definition = context.findDefinition( *name );
+	const Index* definition_index;
+	const Definition* definition = context.index->findDefinition( *name, &definition_index );
 	if ( definition == 0 )
 		throw ParseException( statement->pos, OS"Definition \"" + *name + "\" not found" );
 
@@ -71,36 +72,30 @@ void Composer::composeIdentity( const Context& context, const IdentityStatement*
 	if ( definition->params.count() != statement->args.count() ) { printf( "%d %d\n", definition->params.count(), statement->args.count() );
 		throw ParseException( statement->pos, "Not the same amount of arguments given as that there are parameters" ); }
 
+	// Compose with the argument list as the new index
+	Context sub_context( &context );
+	sub_context.index.alloc( Index( context.index, ArrayMap<Definition>( definition->params.count() ) ) );
+	Map<Definition>& argument_index = sub_context.index->definitions;
+
 	// Check for each parameter if the given argument is of the correct type and add them to a map
-	Map<CSPtr<DefinitionStatement>> argument_index;
 	for ( Size i = 0; i < definition->params.count(); i++ ) {
-		Parameter param = definition->params[i];
+		Parameter param = definition->params.at(i).value;
 		CSPtr<Statement> arg = statement->args[i];
 		CSPtr<Statement> evaluated = arg;
 
-		if ( param.type_name != 0 ) {
-			try {
-				evaluated = context.evaluateStatement( context.findType( *param.type_name ), evaluated );
-			}
-			catch ( TypeNotFoundException& ) {
-				throw ParseException( arg->pos.move( param.type_name_pos ), OS"No definition was found for type name \"" + *param.type_name + '"' );
-			}
+		if ( param.has_type ) {
+			evaluated = context.evaluateStatement( param.type, evaluated );
 			if ( evaluated == 0 )
-				throw ParseException( arg->pos, OS"Argument not of type \"" + *param.type_name + '\"' );
+				throw ParseException( arg->pos, OS"Argument not of requested type" );	// TODO: provide type name
 		}
 
-		DefinitionStatement arg_def;
-		arg_def.pos = definition->pos.move( param.name_pos );
-		arg_def.name = param.name;
-		arg_def.name_pos = param.name_pos;
-		arg_def.body = evaluated;
-		argument_index.add( *param.name, CSPtr<DefinitionStatement>::allocNew( arg_def ) );
+		// Add the argument to the argument index as a definition that has no parameters
+		Definition arg_def(
+			definition->pos.move( param.name_pos ),
+			evaluated
+		);
+		argument_index.at(i) = MapEntry<Definition>( definition->params.at(i).key, arg_def );
 	}
-
-	// Compose with the argument list as the new index
-	Context sub_context( &context );
-	sub_context.index.alloc();
-	sub_context.index->definitions = argument_index;
 
 	return this->composeStatement( sub_context, definition->body );
 }

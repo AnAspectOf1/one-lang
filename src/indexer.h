@@ -11,10 +11,13 @@ namespace one {
 	class Indexer {
 		const StatementList* document;
 
+		chi::Size countDefinitions() const;
+
 	public:
 		Indexer( const StatementList* document );
 
-		Index index() const;
+		// Creates an Index from all the definitions from DefinitionSt
+		Index index( const Index* parent = 0 ) const;
 	};
 
 }

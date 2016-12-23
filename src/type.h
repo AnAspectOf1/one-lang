@@ -2,22 +2,24 @@
 #define _ONE_TYPE_H
 
 #include "exception.h"
-#include "statement.h"
+#include <chi/ptr.h>
 #include <chi/string.h>
 
 
 namespace one {
 
-	class TypeNotFoundException : public Exception {};
+	class Definition;
+
 	
 	class Type {
 	protected:
 		bool _is_str;
 
 	public:
-		const DefinitionStatement* def;
+		const Definition* def;
 
-		Type( const DefinitionStatement* def );
+		Type() {}
+		Type( const Definition* def );
 		Type( bool is_str );
 
 		bool is_def() const;

@@ -16,11 +16,7 @@ namespace one {
 		const Context* parent;
 
 	public:
-		Context() : parent(0) {
-			
-			this->string_format.alloc( chi::String<>( "utf8" ) );
-			this->number_format.alloc( chi::String<>( "uint8" ) );
-		}
+		Context() : parent(0) {}
 		Context( const Context* parent ) : parent(parent), string_format(parent->string_format), number_format(parent->number_format), space(parent->space), index(parent->index) {}
 
 		chi::CSPtr<chi::StringBase> filename;
@@ -35,12 +31,10 @@ namespace one {
 		// The index for the local context or the argument index for the local definition
 		chi::SPtr<Index> index;
 
-		chi::CSPtr<Statement> evaluateDefinition( const Type& type, chi::CSPtr<DefinitionStatement> statement, const chi::Map<chi::CSPtr<DefinitionStatement>>& argument_index ) const;
+		chi::CSPtr<Statement> evaluateDefinition( const Type& type, chi::CSPtr<Statement> statement, const Index& argument_index ) const;
 		chi::CSPtr<Statement> evaluateIdentity( const Type& type, chi::CSPtr<IdentityStatement> statement ) const;
 		chi::CSPtr<Statement> evaluateScope( const Type& type, chi::CSPtr<ScopeStatement> statement ) const;
 		chi::CSPtr<Statement> evaluateStatement( const Type& type, chi::CSPtr<Statement> statement ) const;
-		chi::CSPtr<DefinitionStatement> findDefinition( const chi::StringBase& name ) const;
-		Type findType( const chi::StringBase& name ) const;
 	};
 }
 

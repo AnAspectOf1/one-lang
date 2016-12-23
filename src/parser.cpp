@@ -1,4 +1,5 @@
 #include "parser.h"
+
 #include <chi/allocator.h>
 #include <chi/dynamic.h>
 #include <cstdio>
@@ -198,8 +199,8 @@ NumberStatement Parser::parseNumber() {
 	return NumberStatement();
 }
 
-Parameter Parser::parseParameter() {
-	Parameter param;
+ParameterStatement Parser::parseParameter() {
+	ParameterStatement param;
 
 	param.name.alloc( this->parseName() );
 	
@@ -208,6 +209,7 @@ Parameter Parser::parseParameter() {
 	// If next char indicates a name, parse it as the definition type
 	if ( Parser::alphabet.contains(c) || Parser::alphabetUpper.contains(c) ) {
 		this->stream->move(-1);
+		param.type_pos = this->stream->position();
 		param.type_name.alloc( this->parseName() );
 	}
 	else
@@ -216,8 +218,8 @@ Parameter Parser::parseParameter() {
 	return param;
 }
 
-LinkedList<Parameter> Parser::parseParameters() {
-	LinkedList<Parameter> params;
+LinkedList<ParameterStatement> Parser::parseParameters() {
+	LinkedList<ParameterStatement> params;
 	char c;
 
 	do {

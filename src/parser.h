@@ -28,6 +28,8 @@ namespace one {
 
 	private:
 		char _stringSpecialChar( char c );
+		void stepBack();
+		char readChar();
 
 	protected:
 		chi::ReadSeekStream* stream;

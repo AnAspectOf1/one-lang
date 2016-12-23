@@ -362,32 +362,34 @@ char Parser::_stringSpecialChar( char c ) {
 	else	throw ParseException( this, OS"Invalid special character in string literal: \"\\" + c + '\"' );
 }
 
+char Parser::readChar() {
+	char c = this->stream->readChar();
+
+	while ( c == ';' ) {
+
+		// Skip everything until first newline
+		while ( (c = this->stream->readChar()) != '\n' ) {}
+
+		// Take the first char after the newline
+		c = this->stream->readChar();
+	}
+	
+	return c;
+}
+
+void Parser::stepBack() {
+	this->stream->move(-1);
+}
+
 void Parser::skip( const StringBase& chars ) {
 	char c;
 
 	do {
-		c = this->stream->readChar();
-
-		// If comment
-		if ( c == ';' ) {
-
-			// Skip everything until newline
-			do { c = this->stream->readChar(); }
-			while ( c != '\n' );
-			c = this->stream->readChar();
-		}
-
-		// If newline directive
-		/*if ( c == '\' ) {
-			do { c = this->stream->readChar(); }
-			while ( Parser::whitespace.contains(c) );
-			if ( c != '\n' )
-				throw ParseException( this, OS"Non-whitespace character '" + c + "' found after newline directive", 0 );
-		}*/
+		c = this->readChar();
 	}
 	while ( chars.contains( c ) );
 
-	this->stream->move(-1);
+	this->stepBack();
 }
 
 void Parser::skipWhitespace() {

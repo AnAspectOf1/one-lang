@@ -46,20 +46,21 @@ $bodyTag (content);
 ; An identity statement evaluates to its definition's body, filled with the given arguments.
 ; So we can do the following things:
 html;
-	headTag tag "title" "My Page"
-	bodyTag tag "p" "Some content here..."
+	{headTag tag "title" "My Page"};
+	{bodyTag tag "p" "Some content here..."}
 
 $titleHead headTag tag "title" "My Page"
 $contentBody bodyTag tag "p" "Some content here..."
 html titleHead contentBody
 ; And both will output the same thing
 
-; The reason a scope statement evaluates to its first evaluating statment is because we then can use scopes to expand certain definitions.
+; The reason a scope statement evaluates to its first evaluating statement is because we then can use scopes to expand certain definitions.
 ; This is very much like deriving classes in other languages.
 ; We can do the following:
-$someThings;
+$someThings {
 	titleHead
 	"Some extra data"
+}
 
 ; Now the definition some_things can still be used as a head_tag type, since some_things evaluates to title_head, and title_head evaluates to an headTag statement:
 html someThings contentBody

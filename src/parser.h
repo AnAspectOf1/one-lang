@@ -43,6 +43,7 @@ namespace one {
 
 		DefinitionStatement parseDefinition();
 		IdentityStatement parseIdentity();
+		IncludeStatement parseInclude();
 		LabelStatement parseLabel();
 		ParameterStatement parseParameter();
 		chi::LinkedList<ParameterStatement> parseParameters();

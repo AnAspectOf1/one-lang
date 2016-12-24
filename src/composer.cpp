@@ -2,6 +2,7 @@
 
 #include "exception.h"
 #include "file.h"
+#include "includes.h"
 #include "parser.h"
 #include <chi/dynamic.h>
 

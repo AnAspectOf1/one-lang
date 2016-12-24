@@ -13,6 +13,7 @@ namespace one {
 
 	class ParameterStatement;
 	class Statement;
+	class StringStatement;
 
 
 
@@ -20,6 +21,7 @@ namespace one {
 		StatementType_Definition,       // A new definition
 		StatementType_Format,           // A format specifier
 		StatementType_Identity,         // A value based on an existing definition
+		StatementType_Include,          // An include directive
 		StatementType_Label,            // A definition and regular statement at the same time
 		StatementType_Number,           // A value based on a literal number
 		StatementType_Scope,            // A list of statements in a subcontext
@@ -45,6 +47,7 @@ namespace one {
 				"definition",
 				"format",
 				"identity",
+				"include",
 				"label",
 				"number",
 				"scope",
@@ -83,6 +86,14 @@ namespace one {
 		IdentityStatement() : Statement( StatementType_Identity ) {}
 
 		bool evaluates() const override	{ return true; }
+	};
+
+	class IncludeStatement : public Statement {
+	public:
+		chi::SPtr<StringStatement> filename;
+		StatementList statements;
+
+		IncludeStatement() : Statement( StatementType_Include ) {}
 	};
 
 	class LabelStatement : public Statement {

@@ -7,7 +7,7 @@ OBJ_EXT = o
 INCL_EXT = h
 INCL_DIR = include
 DEBUG = yes
-CHI_COMMIT = 9199df8d81edebd755de8f791a23d0fb99728216
+CHI_COMMIT = 8fdb0f45da63c509c602ddaef322a6f5dcc92ef8
 
 CC = g++
 CFLAGS = -std=c++11
@@ -22,7 +22,7 @@ HEAD_FILES = $(shell find $(SRC_DIR) -name *.$(INCL_EXT))
 INCL_FILES = $(patsubst $(SRC_DIR)/%.h,$(INCL_DIR)/$(PATH_NAME)/%.h,$(HEAD_FILES))
 
 ifeq ($(DEBUG),yes)
-CFLAGS += -g -O0 -Wall -Wextra -lefence
+CFLAGS += -g -O0 -Wall -Wextra
 LDFLAGS += -rdynamic
 endif
 CFLAGS += -I $(CHI_INCLUDE)
@@ -49,8 +49,7 @@ warning:
 	make build
 
 test: $(BIN_DIR)/$(NAME)
-	export EF_PROTECT_FREE=1
-	gdb --args $(BIN_DIR)/$(NAME) test/definitions.1
+	gdb --args $(BIN_DIR)/$(NAME) test/example.1
 
 $(BIN_DIR)/$(NAME): $(OBJ_FILES) $(BIN_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ_FILES) -o $(BIN_DIR)/$(NAME)

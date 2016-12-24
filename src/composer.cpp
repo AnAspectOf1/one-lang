@@ -2,6 +2,7 @@
 
 #include "exception.h"
 #include "file.h"
+#include "includes.h"
 #include "parser.h"
 #include <chi/dynamic.h>
 
@@ -37,6 +38,8 @@ void Composer::composeStatement( const Context& context, const Statement* statem
 		this->composeFormat( context, (const FormatStatement*)statement );
 	else if ( statement->type() == StatementType_Identity )
 		this->composeIdentity( context, (const IdentityStatement*)statement );
+	else if ( statement->type() == StatementType_Label )
+		this->composeLabel( context, (const LabelStatement*)statement );
 	else if ( statement->type() == StatementType_Scope )
 		this->composeScope( context, (const ScopeStatement*)statement );
 	else if ( statement->type() == StatementType_String )
@@ -110,6 +113,10 @@ void Composer::composeIdentity( const Context& context, const IdentityStatement*
 	//printf("Composing identity \"%s\" with new index %p.\n", name->ptr(), sub_context.index.ptr());
 	// Compose the definition's body with the index from where is was found
 	return this->composeStatement( sub_context, definition->body );
+}
+
+void Composer::composeLabel( const Context& context, const LabelStatement* statement ) {
+	this->composeStatement( context, statement->body );
 }
 
 void Composer::composeString( const Context& context, const StringStatement* statement ) {

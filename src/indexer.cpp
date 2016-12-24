@@ -9,22 +9,23 @@ using namespace one;
 
 Indexer::Indexer( const StatementList* stats ) : document(stats) {}
 
-Size Indexer::countDefinitions() const {
+void Indexer::countDefinitions( chi::Size* defs, chi::Size* labels ) const {
 
-	Size count = 0, doc_count = this->document->count();
+	*defs = 0; *labels = 0; Size doc_count = this->document->count();
 	for ( Size i = 0; i < doc_count; i++ ) {
 		if ( this->document->at(i)->type() == StatementType_Definition )
-			count++;
+			(*defs)++;
+		else if ( this->document->at(i)->type() == StatementType_Label )
+			(*labels)++;
 	}
-
-	return count;
 }
 
 Index Indexer::index( const Index* parent ) const {
-	Size def_count = this->countDefinitions();
+	Size def_count, label_count;
+	this->countDefinitions( &def_count, &label_count );
 
 	Index index( parent );
-	index.definitions.grow( def_count );
+	index.definitions.grow( def_count + label_count );
 	ArrayMap<SPtr<Definition>>& definitions = index.definitions;
 
 	// First populate all the definitions without parameters
@@ -80,6 +81,27 @@ Index Indexer::index( const Index* parent ) const {
 					}
 			}
 
+			j++;
+		}
+	}
+
+	// Oh and do the labels as well
+	j = 0;
+	for ( Size i = 0; j < label_count; i++ ) {
+		const Statement* statement = this->document->at(i);
+
+		if ( statement->type() == StatementType_Label ) {
+			const LabelStatement* label_stat = (const LabelStatement*)statement;
+
+			SPtr<Definition> def; def.alloc(
+				Definition(
+					label_stat->pos,
+					label_stat->body
+				)
+			);
+			def->name = label_stat->name;
+
+			definitions.at(def_count + j) = MapEntry<SPtr<Definition>>( *label_stat->name, def );
 			j++;
 		}
 	}

@@ -1,7 +1,10 @@
 #include "parser.h"
 
+#include "includes.h"
 #include <chi/allocator.h>
 #include <chi/dynamic.h>
+#include <chi/file.h>
+#include <chi/path.h>
 #include <cstdio>
 
 using namespace chi;
@@ -146,7 +149,76 @@ IdentityStatement Parser::parseIdentity() {
 	return statement;
 }
 
+IncludeStatement Parser::parseInclude() {
+	IncludeStatement statement;
 
+	this->skipWhitespace();
+
+	char c = this->readChar();
+	if ( c != '"' )
+		throw ParseException( this, "An include statement should consists of a string string statement", 0 );
+	FilePos filename_pos = this->filePos(-1);
+
+	StringStatement filename = this->parseString( true );
+	filename.pos = filename_pos;
+	ReadFile file;
+	String<> final_filename;
+
+	// If local, just open it
+	if ( (*filename.string)[0] == '.' )
+		if ( (*filename.string)[1] == '/' )
+			try {
+				final_filename = Path<>(*this->filename).dir() + '/';
+				// TODO: Add string slice to libqi
+				for ( Size i = 2; i < filename.string->length(); i++ ) {
+					final_filename += (*filename.string)[i];
+				}
+
+				file = ReadFile::open( final_filename );
+			}
+			catch ( IoException& e ) {
+				throw ParseException( filename.pos, OS"Unable to open file: " + *e.message() );
+			}
+		else
+			throw ParseException( filename.pos, "../ filenames not supported yet!" );
+	// If not, search each include dir
+	else {
+		Size i;
+		auto search_dirs = Includes::searchDirs();
+		for ( i = 0; i < search_dirs.count(); i++ ) {
+			try {
+				final_filename = search_dirs[i] + *filename.string;
+				file = ReadFile::open( final_filename );
+				break;
+			}
+			catch ( IoException& ) {
+				// TODO: Only check for file not exists errors
+			}
+		}
+
+		if ( i == search_dirs.count() )
+			throw ParseException( filename.pos, OS"File \"" + *filename.string + " not found" );
+	}
+
+	statement.statements = Parser( &file, final_filename ).parse();
+	
+	return statement;
+}
+
+LabelStatement Parser::parseLabel() {
+	LabelStatement statement;
+
+	this->skipWhitespace();
+
+	statement.name_pos = this->stream->position();
+	statement.name.alloc( this->parseName() );
+
+	this->skipWhitespace();
+
+	statement.body = this->parseStatement();
+
+	return statement;
+}
 
 DynamicString Parser::parseName() {
 	char c = this->stream->readChar();
@@ -271,6 +343,10 @@ SPtr<Statement> Parser::parseStatement() {
 		this->stream->move(-1);
 		statement.alloc( this->parseIdentity() );
 	}
+	else if ( c == '&' )
+		statement.alloc( this->parseInclude() );
+	else if ( c == ':' )
+		statement.alloc( this->parseLabel() );
 	//else if ( c == '@' )
 	//	statement.alloc( this->parseNamespace() );
 	else if ( c == '"' )
@@ -300,7 +376,11 @@ StatementList Parser::parseStatements( bool in_scope ) {
 			this->skipWhitespace();
 
 			try {
-				stats += this->parseStatement();
+				CSPtr<Statement> statement = this->parseStatement();
+				if ( statement->type() != StatementType_Include )
+					stats += statement;
+				else
+					stats += (statement.cast<IncludeStatement>())->statements;
 			}
 			catch ( EmptyStatementException e ) {}
 			catch ( EndOfStreamException e ) {

@@ -26,6 +26,7 @@ namespace one {
 
 		void composeFormat( const Context& context, const FormatStatement* statement );
 		void composeIdentity( const Context& context, const IdentityStatement* statement );
+		void composeLabel( const Context& context, const LabelStatement* statement );
 		void composeScope( const Context& context, const ScopeStatement* statement );
 		void composeStatement( const Context& context, const Statement* statement );
 		void composeStatements( const Context& context, const StatementList& statements );

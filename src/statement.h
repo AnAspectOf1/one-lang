@@ -13,13 +13,16 @@ namespace one {
 
 	class ParameterStatement;
 	class Statement;
+	class StringStatement;
 
 
 
 	enum StatementType {
 		StatementType_Definition,       // A new definition
-		StatementType_Identity,         // A value based on an existing definition
 		StatementType_Format,           // A format specifier
+		StatementType_Identity,         // A value based on an existing definition
+		StatementType_Include,          // An include directive
+		StatementType_Label,            // A definition and regular statement at the same time
 		StatementType_Number,           // A value based on a literal number
 		StatementType_Scope,            // A list of statements in a subcontext
 		StatementType_String            // A value based on a string
@@ -42,8 +45,10 @@ namespace one {
 		chi::String<> typeName() const {
 			static chi::String<> names[] = {
 				"definition",
-				"identity",
 				"format",
+				"identity",
+				"include",
+				"label",
 				"number",
 				"scope",
 				"string"
@@ -79,6 +84,25 @@ namespace one {
 		StatementList args;
 
 		IdentityStatement() : Statement( StatementType_Identity ) {}
+
+		bool evaluates() const override	{ return true; }
+	};
+
+	class IncludeStatement : public Statement {
+	public:
+		chi::SPtr<StringStatement> filename;
+		StatementList statements;
+
+		IncludeStatement() : Statement( StatementType_Include ) {}
+	};
+
+	class LabelStatement : public Statement {
+	public:
+		chi::SPtr<chi::StringBase> name;
+		chi::Size name_pos;
+		chi::SPtr<Statement> body;
+
+		LabelStatement() : Statement( StatementType_Label ) {}
 
 		bool evaluates() const override	{ return true; }
 	};

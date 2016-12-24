@@ -11,7 +11,7 @@ namespace one {
 	class Indexer {
 		const StatementList* document;
 
-		chi::Size countDefinitions() const;
+		void countDefinitions( chi::Size* defs, chi::Size* labels ) const;
 
 	public:
 		Indexer( const StatementList* document );

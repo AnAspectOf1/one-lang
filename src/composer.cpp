@@ -61,21 +61,30 @@ void Composer::composeFormat( const Context& context, const FormatStatement* sta
 
 void Composer::composeIdentity( const Context& context, const IdentityStatement* statement ) {	
 	CSPtr<StringBase> name = statement->names.last();
-	//printf("Identity: %s\n", name->ptr());
+	//printf("Composing ident. %s\n", name->ptr());
 
 	const Index* definition_index;
 	const Definition* definition = context.index->findDefinition( *name, &definition_index );
 	if ( definition == 0 )
 		throw ParseException( statement->pos, OS"Definition \"" + *name + "\" not found" );
 
+	//if ( definition != 0 )
+	//	printf("Definition %s found in index %p\n", definition->name->ptr(), definition_index);
+
 	// Check if the same number of arguments are given than that there are parameters
-	if ( definition->params.count() != statement->args.count() ) { printf( "%d %d\n", definition->params.count(), statement->args.count() );
-		throw ParseException( statement->pos, "Not the same amount of arguments given as that there are parameters" ); }
+	if ( definition->params.count() != statement->args.count() ) {
+		// TODO: Create some nice chi library functions
+		char param_count[4], arg_count[4];
+		sprintf( param_count, "%d", definition->params.count() );
+		sprintf( arg_count, "%d", statement->args.count() );
+
+		throw ParseException( statement->pos, OS"Definition \"" + name->ptr() + "\" takes " + param_count + " parameter" + (definition->params.count() != 1 ? "s" : "") + " but " + arg_count + " argument" + (statement->args.count() != 1 ? "s are" : " is") + " given" );
+	}
 
 	// Compose with the argument list as the new index
 	Context sub_context( &context );
-	sub_context.index.alloc( Index( context.index, ArrayMap<Definition>( definition->params.count() ) ) );
-	Map<Definition>& argument_index = sub_context.index->definitions;
+	sub_context.index.alloc( Index( definition_index, context.index, ArrayMap<SPtr<Definition>>( definition->params.count() ) ) );
+	Map<SPtr<Definition>>& argument_index = sub_context.index->arguments;
 
 	// Check for each parameter if the given argument is of the correct type and add them to a map
 	for ( Size i = 0; i < definition->params.count(); i++ ) {
@@ -85,18 +94,21 @@ void Composer::composeIdentity( const Context& context, const IdentityStatement*
 
 		if ( param.has_type ) {
 			evaluated = context.evaluateStatement( param.type, evaluated );
-			if ( evaluated == 0 )
-				throw ParseException( arg->pos, OS"Argument not of requested type" );	// TODO: provide type name
+			if ( evaluated == 0 )			
+				throw ParseException( arg->pos, OS"Argument not of requested type \"" + *param.type_name + '"' );
 		}
 
 		// Add the argument to the argument index as a definition that has no parameters
-		Definition arg_def(
+		SPtr<Definition> arg_def; arg_def.alloc( Definition(
 			definition->pos.move( param.name_pos ),
 			evaluated
-		);
-		argument_index.at(i) = MapEntry<Definition>( definition->params.at(i).key, arg_def );
+		) );
+		arg_def->name.alloc( definition->params.at(i).key );
+		argument_index.at(i) = MapEntry<SPtr<Definition>>( definition->params.at(i).key, arg_def );
 	}
 
+	//printf("Composing identity \"%s\" with new index %p.\n", name->ptr(), sub_context.index.ptr());
+	// Compose the definition's body with the index from where is was found
 	return this->composeStatement( sub_context, definition->body );
 }
 

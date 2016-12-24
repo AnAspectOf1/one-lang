@@ -25,7 +25,7 @@ Index Indexer::index( const Index* parent ) const {
 
 	Index index( parent );
 	index.definitions.grow( def_count );
-	ArrayMap<Definition>& definitions = index.definitions;
+	ArrayMap<SPtr<Definition>>& definitions = index.definitions;
 
 	// First populate all the definitions without parameters
 	Size j = 0;
@@ -35,12 +35,15 @@ Index Indexer::index( const Index* parent ) const {
 		if ( statement->type() == StatementType_Definition ) {
 			CSPtr<DefinitionStatement> def_stat = statement;
 
-			Definition def(
-				def_stat->pos,
-				def_stat->body
+			SPtr<Definition> def; def.alloc(
+				Definition(
+					def_stat->pos,
+					def_stat->body
+				)
 			);
+			def->name = def_stat->name;
 
-			definitions.at(j) = MapEntry<Definition>( *def_stat->name, def );
+			definitions.at(j) = MapEntry<SPtr<Definition>>( *def_stat->name, def );
 			j++;
 		}
 	}
@@ -52,25 +55,23 @@ Index Indexer::index( const Index* parent ) const {
 
 		if ( statement->type() == StatementType_Definition ) {
 			const DefinitionStatement* def_stat = statement.cast<DefinitionStatement>();
-			Definition& def = definitions.at(j).value;
+			SPtr<Definition>& def = definitions.at(j).value;
 
-			def.params.grow( def_stat->params.count() );
+			def->params.grow( def_stat->params.count() );
 			for ( Size k = 0; k < def_stat->params.count(); k++ ) {
 				const ParameterStatement param_stat = def_stat->params[k];
 				
 				if ( param_stat.type_name == 0 || param_stat.type_name->length() == 0 )
-					def.params.at(k) = MapEntry<Parameter>( *param_stat.name, Parameter( param_stat.name_pos ) );
-				else if ( *param_stat.type_name == "str" )
-					def.params.at(k) = MapEntry<Parameter>( *param_stat.name, Parameter( Type(true), param_stat.name_pos, param_stat.type_pos ) );
-				else if ( *param_stat.type_name == "num" )
-					def.params.at(k) = MapEntry<Parameter>( *param_stat.name, Parameter( Type(false), param_stat.name_pos, param_stat.type_pos ) );
+					def->params.at(k) = MapEntry<Parameter>( *param_stat.name, Parameter( param_stat.name_pos ) );
+				else if ( *param_stat.type_name == "str" || *param_stat.type_name == "num" )
+					def->params.at(k) = MapEntry<Parameter>( *param_stat.name, Parameter( Type(true), param_stat.type_name, param_stat.name_pos, param_stat.type_pos ) );
 				else
 					try {
 						Type type = index.findType( *param_stat.type_name );
 				
-						def.params.at(k) = MapEntry<Parameter>(
+						def->params.at(k) = MapEntry<Parameter>(
 							*param_stat.name,
-							Parameter( type, param_stat.name_pos, param_stat.type_pos )
+							Parameter( type, param_stat.type_name, param_stat.name_pos, param_stat.type_pos )
 						);
 					}
 					catch ( TypeNotFoundException& ) {

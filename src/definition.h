@@ -2,6 +2,7 @@
 #define _ONE_DEFINITION_H
 
 #include "file.h"
+#include "index.h"
 #include "parameter.h"
 #include "statement.h"
 #include <chi/map.h>
@@ -24,6 +25,9 @@ namespace one {
 		chi::ArrayMap<Parameter> params;
 		// The body statement.
 		chi::CSPtr<Statement> body;
+
+		chi::CSPtr<chi::StringBase> name;
+
 
 		Definition() {}
 		Definition( const FilePos& pos, chi::CSPtr<Statement> body, const chi::ArrayMap<Parameter> params = chi::ArrayMap<Parameter>() ) : pos(pos), params(params), body(body) {}

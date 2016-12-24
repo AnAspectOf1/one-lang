@@ -13,25 +13,29 @@ CSPtr<Statement> Context::evaluateDefinition( const Type& type, CSPtr<Statement>
 
 CSPtr<Statement> Context::evaluateIdentity( const Type& type, CSPtr<IdentityStatement> statement ) const {
 	const Index* definition_index;
-	const Definition* definition = this->index->findDefinition( *statement->names.last(), &definition_index );
+	CSPtr<Definition> definition = this->index->findDefinition( *statement->names.last(), &definition_index );
+	//printf( "Evaluating ident. def. \"%s\".\n", definition->name->ptr() );
 
-	// If this identity turns out to be of the definition 'type', this is the identity to which we evaluate
-	if ( definition == type.def )
+
+	// If this identity turns out to be of the definition 'type', this is the statement to which we evaluate
+	if ( type.is_def() && definition == type.def )
 		return statement;
 
 	// Otherwise we expand the definition
-	Index argument_index( definition_index );
-	argument_index.definitions.grow( definition->params.count() );
+	Index argument_index( definition_index, this->index );
+	argument_index.arguments.grow( definition->params.count() );
 	for ( Size i = 0; i < definition->params.count(); i++ ) {
 
 		CSPtr<Statement> eval_stat = this->evaluateStatement( definition->params.at(i).value.type, statement->args[i] );
+		if ( eval_stat == 0 )
+			return 0;
 
-		Definition def(
+		SPtr<Definition> def; def.alloc( Definition(
 			definition->pos.move( definition->params.at(i).value.name_pos ),
 			eval_stat
-		);
+		) );
 
-		argument_index.definitions.at(i) = MapEntry<Definition>( definition->params.at(i).key, def );
+		argument_index.arguments.at(i) = MapEntry<SPtr<Definition>>( definition->params.at(i).key, def );
 	}
 
 	return this->evaluateDefinition( type, definition->body, argument_index );

@@ -1,10 +1,12 @@
 ; In One you can define definitions which allow you to put a statement (or a bunch of statements) under a name.
 ; For example:
-$author "Anonymous"
+;$author "Anonymous"
 
 ; If we now wish to output something with the value we've defined $author to be, we simple repeat its name without the '$' character:
-"Credits go to ", author, ".\n"
+;"Credits go to ", author, ".\n"
 ; Here author is called an identity statement.
+
+$test {"hoi\n", content, "dag\n"}
 
 ; Now for something more useful.
 ; We can also use parameters for our definitions.
@@ -33,6 +35,7 @@ $html (head headTag, body bodyTag) {
 		head
 		body
 	}
+	"\n"
 }
 $headTag (content);
 	tag "head" content
@@ -52,7 +55,7 @@ html;
 
 $titleHead headTag tag "title" "My Page"
 $contentBody bodyTag tag "p" "Some content here..."
-html titleHead contentBody
+html {titleHead} contentBody
 ; And both will output the same thing
 
 ; The reason a scope statement evaluates to its first evaluating statement is because we then can use scopes to expand certain definitions.
@@ -64,6 +67,6 @@ $someThings {
 }
 
 ; Now the definition some_things can still be used as a head_tag type, since some_things evaluates to title_head, and title_head evaluates to an headTag statement:
-html someThings contentBody
+html {someThings} contentBody
 
 ; And now we've just printed the same HTML page three times!

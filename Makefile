@@ -7,7 +7,7 @@ OBJ_EXT = o
 INCL_EXT = h
 INCL_DIR = include
 DEBUG = yes
-CHI_COMMIT = 0ac4d04a43eebacc3533308aa7032fe9bd53be09
+CHI_COMMIT = 9199df8d81edebd755de8f791a23d0fb99728216
 
 CC = g++
 CFLAGS = -std=c++11

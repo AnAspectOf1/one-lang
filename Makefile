@@ -7,7 +7,7 @@ OBJ_EXT = o
 INCL_EXT = h
 INCL_DIR = include
 DEBUG = yes
-CHI_COMMIT = v0.0.0
+CHI_COMMIT = 9199df8d81edebd755de8f791a23d0fb99728216
 
 CC = g++
 CFLAGS = -std=c++11
@@ -50,7 +50,7 @@ warning:
 
 test: $(BIN_DIR)/$(NAME)
 	export EF_PROTECT_FREE=1
-	gdb --args $(BIN_DIR)/$(NAME) test/example.1
+	gdb --args $(BIN_DIR)/$(NAME) test/definitions.1
 
 $(BIN_DIR)/$(NAME): $(OBJ_FILES) $(BIN_DIR)
 	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJ_FILES) -o $(BIN_DIR)/$(NAME)

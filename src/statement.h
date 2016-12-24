@@ -2,6 +2,7 @@
 #define _ONE_STATEMENT_H
 
 #include "file.h"
+#include "parameter.h"
 #include <chi/linked.h>
 #include <chi/ptr.h>
 #include <chi/string.h>
@@ -10,12 +11,10 @@
 
 namespace one {
 
+	class ParameterStatement;
 	class Statement;
 
-	struct Parameter {
-		chi::CSPtr<chi::StringBase> name, type_name;
-		chi::Size name_pos, type_name_pos;
-	};
+
 
 	enum StatementType {
 		StatementType_Definition,       // A new definition
@@ -55,50 +54,23 @@ namespace one {
 	};
 
 	typedef chi::LinkedList<chi::CSPtr<Statement>> StatementList;
-	// TODO: The above definition of StatementList seems to give segmentations faults. Resolve this.
-	// In the meantime, use the following as a replacement:
-	/*class StatementList : public chi::ArrayBase<chi::CSPtr<Statement>> {
-	protected:
-		std::vector<chi::CSPtr<Statement>> vector;
-
-	public:
-		~StatementList() { printf( "DDDDD StatementList %d\n", this->vector.size() ); }
-
-		chi::CSPtr<Statement>& at( chi::Size index ) override	{ return this->vector[ index ]; }
-		const chi::CSPtr<Statement>& at( chi::Size index ) const override	{ return this->vector[ index ]; }
-
-		chi::Size count() const	{ return this->vector.size(); }
-
-		chi::CSPtr<Statement>* ptr() override	{ return &this->vector[0]; }
-		const chi::CSPtr<Statement>* ptr() const override	{ return &this->vector[0]; }
-
-		void grow( chi::Size increment ) override {
-			this->vector.reserve( this->count() + increment );
-			for ( chi::Size i = 0; i < increment; i++ ) {		
-				this->vector.push_back( chi::CSPtr<Statement>() );
-			}
-		}
-
-		void shrink( chi::Size decrement ) override {
-			for ( chi::Size i = 0; i < decrement; i++ ) {		
-				this->vector.pop_back();
-			}
-		}
-	};
-
-	class BreakStatement : public Statement {
-	public:
-		BreakStatement() : Statement( StatementType_Break ) {}
-	};*/
 
 	class DefinitionStatement : public Statement {
 	public:
 		chi::CSPtr<chi::StringBase> name;
-		unsigned int name_pos;
-		chi::LinkedList<Parameter> params;
+		chi::Size name_pos;
+		chi::LinkedList<ParameterStatement> params;
 		chi::CSPtr<Statement> body;
 
 		DefinitionStatement() : Statement( StatementType_Definition ) {}
+	};
+
+	class FormatStatement : public Statement {
+	public:
+		chi::SPtr<chi::StringBase> format;
+		chi::SPtr<Statement> statement;
+
+		FormatStatement() : Statement( StatementType_Format ) {}
 	};
 
 	class IdentityStatement : public Statement {
@@ -128,22 +100,9 @@ namespace one {
 		bool evaluates() const override	{ return true; }
 	};
 
-	class StringStatement : public Statement {
-	public:
-		chi::SPtr<chi::StringBase> string;
-
-		StringStatement() : Statement( StatementType_String ) {}
-		StringStatement( const StringStatement& other ) : Statement( StatementType_String ), string( other.string ) {}
-
-		bool evaluates() const override	{ return true; }
-	};
-
-	class FormatStatement : public Statement {
-	public:
-		chi::SPtr<chi::StringBase> format;
-		chi::SPtr<Statement> statement;
-
-		FormatStatement() : Statement( StatementType_Format ) {}
+	struct ParameterStatement {	// Not a real statement, but needs to be called something that is different from Parameter in definition.h
+		chi::CSPtr<chi::StringBase> name, type_name;
+		chi::Size name_pos, type_pos;
 	};
 
 	class ScopeStatement : public Statement {
@@ -152,6 +111,16 @@ namespace one {
 
 		ScopeStatement() : Statement( StatementType_Scope ) {}
 	
+		bool evaluates() const override	{ return true; }
+	};
+
+	class StringStatement : public Statement {
+	public:
+		chi::SPtr<chi::StringBase> string;
+
+		StringStatement() : Statement( StatementType_String ) {}
+		StringStatement( const StringStatement& other ) : Statement( StatementType_String ), string( other.string ) {}
+
 		bool evaluates() const override	{ return true; }
 	};
 }

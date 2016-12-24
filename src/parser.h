@@ -28,6 +28,8 @@ namespace one {
 
 	private:
 		char _stringSpecialChar( char c );
+		void stepBack();
+		char readChar();
 
 	protected:
 		chi::ReadSeekStream* stream;
@@ -41,8 +43,8 @@ namespace one {
 
 		DefinitionStatement parseDefinition();
 		IdentityStatement parseIdentity();
-		Parameter parseParameter();
-		chi::LinkedList<Parameter> parseParameters();
+		ParameterStatement parseParameter();
+		chi::LinkedList<ParameterStatement> parseParameters();
 		ScopeStatement parseScope();
 		StatementList parseStatements( bool in_scope );
 		FormatStatement parseFormat();

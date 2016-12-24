@@ -146,7 +146,20 @@ IdentityStatement Parser::parseIdentity() {
 	return statement;
 }
 
+LabelStatement Parser::parseLabel() {
+	LabelStatement statement;
 
+	this->skipWhitespace();
+
+	statement.name_pos = this->stream->position();
+	statement.name.alloc( this->parseName() );
+
+	this->skipWhitespace();
+
+	statement.body = this->parseStatement();
+
+	return statement;
+}
 
 DynamicString Parser::parseName() {
 	char c = this->stream->readChar();
@@ -271,6 +284,8 @@ SPtr<Statement> Parser::parseStatement() {
 		this->stream->move(-1);
 		statement.alloc( this->parseIdentity() );
 	}
+	else if ( c == ':' )
+		statement.alloc( this->parseLabel() );
 	//else if ( c == '@' )
 	//	statement.alloc( this->parseNamespace() );
 	else if ( c == '"' )

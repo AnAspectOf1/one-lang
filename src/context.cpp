@@ -41,6 +41,10 @@ CSPtr<Statement> Context::evaluateIdentity( const Type& type, CSPtr<IdentityStat
 	return this->evaluateDefinition( type, definition->body, argument_index );
 }
 
+CSPtr<Statement> Context::evaluateLabel( const Type& type, CSPtr<LabelStatement> statement ) const {
+	 return this->evaluateStatement( type, statement->body );
+}
+
 CSPtr<Statement> Context::evaluateScope( const Type& type, CSPtr<ScopeStatement> statement ) const {
 	if ( statement->contents.size() == 0 )
 		return 0;
@@ -60,6 +64,8 @@ CSPtr<Statement> Context::evaluateStatement( const Type& type, CSPtr<Statement> 
 
 	if ( statement->type() == StatementType_Identity )
 		return this->evaluateIdentity( type, statement.cast<IdentityStatement>() );
+	if ( statement->type() == StatementType_Label )
+		return this->evaluateLabel( type, statement.cast<LabelStatement>() );
 	if ( statement->type() == StatementType_Scope )
 		return this->evaluateScope( type, statement.cast<ScopeStatement>() );
 	if ( statement->type() == StatementType_Number )

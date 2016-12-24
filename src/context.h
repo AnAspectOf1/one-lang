@@ -33,6 +33,7 @@ namespace one {
 
 		chi::CSPtr<Statement> evaluateDefinition( const Type& type, chi::CSPtr<Statement> statement, const Index& argument_index ) const;
 		chi::CSPtr<Statement> evaluateIdentity( const Type& type, chi::CSPtr<IdentityStatement> statement ) const;
+		chi::CSPtr<Statement> evaluateLabel( const Type& type, chi::CSPtr<LabelStatement> statement ) const;
 		chi::CSPtr<Statement> evaluateScope( const Type& type, chi::CSPtr<ScopeStatement> statement ) const;
 		chi::CSPtr<Statement> evaluateStatement( const Type& type, chi::CSPtr<Statement> statement ) const;
 	};

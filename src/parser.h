@@ -4,11 +4,11 @@
 #include "exception.h"
 #include "file.h"
 #include "statement.h"
-#include <chi/dynamic.h>
-#include <chi/exception.h>
-#include <chi/ptr.h>
-#include <chi/stream.h>
-#include <chi/string.h>
+#include <qi/dynamic.h>
+#include <qi/exception.h>
+#include <qi/ptr.h>
+#include <qi/stream.h>
+#include <qi/string.h>
 #include <type_traits>
 
 
@@ -32,39 +32,39 @@ namespace one {
 		char readChar();
 
 	protected:
-		chi::ReadSeekStream* stream;
-		chi::CSPtr<chi::String<>> filename;
+		qi::ReadSeekStream* stream;
+		qi::CSPtr<qi::String<>> filename;
 
-		static chi::String<> delimiters;
-		static chi::String<> whitespace;
-		static chi::String<> numeric;
-		static chi::String<> alphabet;
-		static chi::String<> alphabetUpper;
+		static qi::String<> delimiters;
+		static qi::String<> whitespace;
+		static qi::String<> numeric;
+		static qi::String<> alphabet;
+		static qi::String<> alphabetUpper;
 
 		DefinitionStatement parseDefinition();
 		IdentityStatement parseIdentity();
 		IncludeStatement parseInclude();
 		LabelStatement parseLabel();
 		ParameterStatement parseParameter();
-		chi::LinkedList<ParameterStatement> parseParameters();
+		qi::LinkedList<ParameterStatement> parseParameters();
 		ScopeStatement parseScope();
 		StatementList parseStatements( bool in_scope );
 		FormatStatement parseFormat();
-		chi::DynamicString parseName();
+		qi::DynamicString parseName();
 		NumberStatement parseNumber();
-		chi::SPtr<Statement> parseStatement();
+		qi::SPtr<Statement> parseStatement();
 		StringStatement parseString( bool double_quoted = true );
-		void skip( const chi::StringBase& chars );
+		void skip( const qi::StringBase& chars );
 		void skipWhitespace();
 
 	public:
 		template <class S>
-		Parser( chi::ReadSeekStream* stream, const S& filename ) : stream( stream ) {
-			static_assert( std::is_base_of<chi::StringBase, S>::value, "Argument filename must derive from StringBase" );
+		Parser( qi::ReadSeekStream* stream, const S& filename ) : stream( stream ) {
+			static_assert( std::is_base_of<qi::StringBase, S>::value, "Argument filename must derive from StringBase" );
 			this->filename.alloc( filename );
 		}
-		Parser( chi::ReadSeekStream* stream, const char* filename = "" ) : stream( stream ) {
-			this->filename.alloc( chi::String<>( filename ) );
+		Parser( qi::ReadSeekStream* stream, const char* filename = "" ) : stream( stream ) {
+			this->filename.alloc( qi::String<>( filename ) );
 		}
 
 		FilePos filePos( unsigned int back = 0 ) const;
@@ -74,18 +74,18 @@ namespace one {
 
 	class ParseException : public Exception {
 	protected:
-		const chi::String<> msg;
+		const qi::String<> msg;
 
 	public:
 		const FilePos file_pos;
 
-		ParseException( const Parser* parser, const char* message, chi::Size back = 1 ) : msg(message), file_pos(parser->filePos(back)) {}
-		ParseException( const Parser* parser, const chi::StringBase& message, chi::Size back = 1 ) : msg(message), file_pos(parser->filePos(back)) {}
-		ParseException( const FilePos& file_pos, const chi::StringBase& message ) : msg(message), file_pos(file_pos) {}
+		ParseException( const Parser* parser, const char* message, qi::Size back = 1 ) : msg(message), file_pos(parser->filePos(back)) {}
+		ParseException( const Parser* parser, const qi::StringBase& message, qi::Size back = 1 ) : msg(message), file_pos(parser->filePos(back)) {}
+		ParseException( const FilePos& file_pos, const qi::StringBase& message ) : msg(message), file_pos(file_pos) {}
 		ParseException( const FilePos& file_pos, const char* message ) : msg(message), file_pos(file_pos) {}
-		ParseException( chi::ReadSeekStream* file, chi::CSPtr<chi::StringBase>& filename, chi::Size pos, const chi::StringBase& message ) : msg(message), file_pos( file, filename, pos ) {}
+		ParseException( qi::ReadSeekStream* file, qi::CSPtr<qi::StringBase>& filename, qi::Size pos, const qi::StringBase& message ) : msg(message), file_pos( file, filename, pos ) {}
 
-		const chi::StringBase& message() const	{ return this->msg; }
+		const qi::StringBase& message() const	{ return this->msg; }
 	};
 }
 

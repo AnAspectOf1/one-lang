@@ -5,9 +5,9 @@
 #include "index.h"
 #include "parameter.h"
 #include "statement.h"
-#include <chi/map.h>
-#include <chi/ptr.h>
-#include <chi/string.h>
+#include <qi/map.h>
+#include <qi/ptr.h>
+#include <qi/string.h>
 
 
 namespace one {
@@ -22,15 +22,15 @@ namespace one {
 		// This index contains all global definitions that the body of this definition might use.
 		//const Index* index;
 		// The parameters of this definition.
-		chi::ArrayMap<Parameter> params;
+		qi::ArrayMap<Parameter> params;
 		// The body statement.
-		chi::CSPtr<Statement> body;
+		qi::CSPtr<Statement> body;
 
-		chi::CSPtr<chi::StringBase> name;
+		qi::CSPtr<qi::StringBase> name;
 
 
 		Definition() {}
-		Definition( const FilePos& pos, chi::CSPtr<Statement> body, const chi::ArrayMap<Parameter> params = chi::ArrayMap<Parameter>() ) : pos(pos), params(params), body(body) {}
+		Definition( const FilePos& pos, qi::CSPtr<Statement> body, const qi::ArrayMap<Parameter> params = qi::ArrayMap<Parameter>() ) : pos(pos), params(params), body(body) {}
 	};
 }
 

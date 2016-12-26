@@ -1,7 +1,7 @@
 #ifndef _ONE_TYPE_H
 #define _ONE_TYPE_H
 
-#include <chi/ptr.h>
+#include <qi/ptr.h>
 
 
 namespace one {
@@ -14,10 +14,10 @@ namespace one {
 		bool _is_str;
 
 	public:
-		chi::CSPtr<Definition> def;
+		qi::CSPtr<Definition> def;
 
 		Type() {}
-		Type( chi::CSPtr<Definition>& def );
+		Type( qi::CSPtr<Definition>& def );
 		Type( bool is_str );
 
 		bool is_def() const;

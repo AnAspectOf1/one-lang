@@ -3,9 +3,9 @@
 
 #include "file.h"
 #include "parameter.h"
-#include <chi/linked.h>
-#include <chi/ptr.h>
-#include <chi/string.h>
+#include <qi/linked.h>
+#include <qi/ptr.h>
+#include <qi/string.h>
 #include <vector>
 
 
@@ -42,8 +42,8 @@ namespace one {
 
 		virtual bool evaluates() const	{ return false; }
 
-		chi::String<> typeName() const {
-			static chi::String<> names[] = {
+		qi::String<> typeName() const {
+			static qi::String<> names[] = {
 				"definition",
 				"format",
 				"identity",
@@ -58,29 +58,29 @@ namespace one {
 		}
 	};
 
-	typedef chi::LinkedList<chi::CSPtr<Statement>> StatementList;
+	typedef qi::LinkedList<qi::CSPtr<Statement>> StatementList;
 
 	class DefinitionStatement : public Statement {
 	public:
-		chi::CSPtr<chi::StringBase> name;
-		chi::Size name_pos;
-		chi::LinkedList<ParameterStatement> params;
-		chi::CSPtr<Statement> body;
+		qi::CSPtr<qi::StringBase> name;
+		qi::Size name_pos;
+		qi::LinkedList<ParameterStatement> params;
+		qi::CSPtr<Statement> body;
 
 		DefinitionStatement() : Statement( StatementType_Definition ) {}
 	};
 
 	class FormatStatement : public Statement {
 	public:
-		chi::SPtr<chi::StringBase> format;
-		chi::SPtr<Statement> statement;
+		qi::SPtr<qi::StringBase> format;
+		qi::SPtr<Statement> statement;
 
 		FormatStatement() : Statement( StatementType_Format ) {}
 	};
 
 	class IdentityStatement : public Statement {
 	public:
-		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
+		qi::LinkedList<qi::SPtr<qi::StringBase>> names;
 		StatementList args;
 
 		IdentityStatement() : Statement( StatementType_Identity ) {}
@@ -90,7 +90,7 @@ namespace one {
 
 	class IncludeStatement : public Statement {
 	public:
-		chi::SPtr<StringStatement> filename;
+		qi::SPtr<StringStatement> filename;
 		StatementList statements;
 
 		IncludeStatement() : Statement( StatementType_Include ) {}
@@ -98,9 +98,9 @@ namespace one {
 
 	class LabelStatement : public Statement {
 	public:
-		chi::SPtr<chi::StringBase> name;
-		chi::Size name_pos;
-		chi::SPtr<Statement> body;
+		qi::SPtr<qi::StringBase> name;
+		qi::Size name_pos;
+		qi::SPtr<Statement> body;
 
 		LabelStatement() : Statement( StatementType_Label ) {}
 
@@ -109,7 +109,7 @@ namespace one {
 
 	/*class NamespaceStatement : public Statement {
 	public:
-		chi::LinkedList<chi::SPtr<chi::StringBase>> names;
+		qi::LinkedList<qi::SPtr<qi::StringBase>> names;
 		unsigned int name_pos;
 
 		NamespaceStatement() : Statement( StatementType_Namespace ) {}
@@ -125,8 +125,8 @@ namespace one {
 	};
 
 	struct ParameterStatement {	// Not a real statement, but needs to be called something that is different from Parameter in definition.h
-		chi::CSPtr<chi::StringBase> name, type_name;
-		chi::Size name_pos, type_pos;
+		qi::CSPtr<qi::StringBase> name, type_name;
+		qi::Size name_pos, type_pos;
 	};
 
 	class ScopeStatement : public Statement {
@@ -140,7 +140,7 @@ namespace one {
 
 	class StringStatement : public Statement {
 	public:
-		chi::SPtr<chi::StringBase> string;
+		qi::SPtr<qi::StringBase> string;
 
 		StringStatement() : Statement( StatementType_String ) {}
 		StringStatement( const StringStatement& other ) : Statement( StatementType_String ), string( other.string ) {}

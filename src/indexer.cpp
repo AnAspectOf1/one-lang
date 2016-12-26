@@ -3,13 +3,13 @@
 
 #include "definition.h"
 
-using namespace chi;
+using namespace qi;
 using namespace one;
 
 
 Indexer::Indexer( const StatementList* stats ) : document(stats) {}
 
-void Indexer::countDefinitions( chi::Size* defs, chi::Size* labels ) const {
+void Indexer::countDefinitions( Size* defs, Size* labels ) const {
 
 	*defs = 0; *labels = 0; Size doc_count = this->document->count();
 	for ( Size i = 0; i < doc_count; i++ ) {

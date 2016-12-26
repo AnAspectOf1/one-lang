@@ -3,7 +3,7 @@
 
 #include "index.h"
 #include "statement.h"
-#include <chi/map.h>
+#include <qi/map.h>
 
 
 namespace one {
@@ -11,7 +11,7 @@ namespace one {
 	class Indexer {
 		const StatementList* document;
 
-		void countDefinitions( chi::Size* defs, chi::Size* labels ) const;
+		void countDefinitions( qi::Size* defs, qi::Size* labels ) const;
 
 	public:
 		Indexer( const StatementList* document );

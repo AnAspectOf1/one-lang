@@ -4,13 +4,13 @@
 #include "file.h"
 #include "includes.h"
 #include "parser.h"
-#include <chi/dynamic.h>
+#include <qi/dynamic.h>
 
-using namespace chi;
+using namespace qi;
 using namespace one;
 
 
-Composer::Composer( WriteStream& stream, const StatementList* document, const chi::StringBase& filename ) : document(document), stream(stream), filename(filename) {}
+Composer::Composer( WriteStream& stream, const StatementList* document, const StringBase& filename ) : document(document), stream(stream), filename(filename) {}
 
 void Composer::compose() {
 	Context context;

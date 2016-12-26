@@ -5,24 +5,24 @@
 #include "exception.h"
 #include "indexer.h"
 #include "statement.h"
-#include <chi/buffer.h>
-#include <chi/stream.h>
-#include <chi/string.h>
+#include <qi/buffer.h>
+#include <qi/stream.h>
+#include <qi/string.h>
 
 
 namespace one {
 
 	class UnsupportedFormatException : public Exception {
-		chi::String<> format;
+		qi::String<> format;
 
 	public:
-		UnsupportedFormatException( const chi::StringBase& format ) : format(format) {}
+		UnsupportedFormatException( const qi::StringBase& format ) : format(format) {}
 	};
 
 	class Composer {
 		const StatementList* document;
-		chi::WriteStream& stream;
-		chi::String<> filename;
+		qi::WriteStream& stream;
+		qi::String<> filename;
 
 		void composeFormat( const Context& context, const FormatStatement* statement );
 		void composeIdentity( const Context& context, const IdentityStatement* statement );
@@ -33,7 +33,7 @@ namespace one {
 		void composeString( const Context& context, const StringStatement* statement );
 
 	public:
-		Composer( chi::WriteStream& stream, const StatementList* document, const chi::StringBase& filename = chi::String<>() );
+		Composer( qi::WriteStream& stream, const StatementList* document, const qi::StringBase& filename = qi::String<>() );
 
 		void compose();
 	};

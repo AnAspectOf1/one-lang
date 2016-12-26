@@ -2,15 +2,15 @@
 #include "exception.h"
 #include "file.h"
 #include "parser.h"
-#include <chi/exception.h>
-#include <chi/file.h>
-#include <chi/io.h>
+#include <qi/exception.h>
+#include <qi/file.h>
+#include <qi/io.h>
 #include <cstdio>
 
 #define PRINT_ERROR( MSG... ) \
 	{ fprintf( stderr, "[One]\t" ); fprintf( stderr, MSG ); fprintf( stderr, ".\n" ); }
 
-using namespace chi;
+using namespace qi;
 using namespace one;
 
 
@@ -94,16 +94,16 @@ int main( int argc, const char** argv ) {
 			}
 		}
 	}
-	catch ( chi::AllocException& e ) {
+	catch ( qi::AllocException& e ) {
 		PRINT_ERROR( "Out of memory" );
 	}
 	// Only use the following global catch statements in releases, for debugging sessions we are better off having the application get killed in order to find backtraces.
 #ifdef NDEBUG	
-	catch ( chi::IoException& e ) {
+	catch ( qi::IoException& e ) {
 		PRINT_ERROR( "I/O error occurred: %s", e.message()->ptr() )
 	}
-	catch ( chi::Exception& e ) {
-		PRINT_ERROR( "Uncaught Chi exception occurred" );
+	catch ( qi::Exception& e ) {
+		PRINT_ERROR( "Uncaught qi exception occurred" );
 	}
 	catch ( one::Exception& e ) {
 		PRINT_ERROR( "Uncaught One exception occurred" );

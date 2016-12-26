@@ -1,15 +1,15 @@
 #ifndef _ONE_INCLUDES_H
 #define _ONE_INCLUDES_H
 
-#include <chi/array.h>
-#include <chi/string.h>
+#include <qi/array.h>
+#include <qi/string.h>
 
 
 namespace one {
 
 	class Includes {
 	public:
-		static chi::Array<chi::String<>> searchDirs();
+		static qi::Array<qi::String<>> searchDirs();
 	};
 }
 

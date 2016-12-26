@@ -1,13 +1,13 @@
 #include "parser.h"
 
 #include "includes.h"
-#include <chi/allocator.h>
-#include <chi/dynamic.h>
-#include <chi/file.h>
-#include <chi/path.h>
+#include <qi/allocator.h>
+#include <qi/dynamic.h>
+#include <qi/file.h>
+#include <qi/path.h>
 #include <cstdio>
 
-using namespace chi;
+using namespace qi;
 using namespace one;
 
 

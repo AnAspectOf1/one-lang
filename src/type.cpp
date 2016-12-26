@@ -1,6 +1,6 @@
 #include "type.h"
 
-using namespace chi;
+using namespace qi;
 using namespace one;
 
 

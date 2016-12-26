@@ -1,6 +1,6 @@
 #include "index.h"
 
-using namespace chi;
+using namespace qi;
 using namespace one;
 
 
@@ -34,7 +34,7 @@ CSPtr<Definition> Index::findDefinition( const StringBase& name, const Index** i
 
 		// Then check if it is any other definition
 		i = context->definitions.findKey( name );
-		if ( i == (Size)-1 ) // If not found, continue searching in parent context
+		if ( i == (Size)-1 ) // If not found, continue searqing in parent context
 			context = context->parent;
 		else {
 			definition = context->definitions.at(i).value;

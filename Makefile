@@ -7,12 +7,12 @@ OBJ_EXT = o
 INCL_EXT = h
 INCL_DIR = include
 DEBUG = yes
-CHI_COMMIT = 8fdb0f45da63c509c602ddaef322a6f5dcc92ef8
+QI_COMMIT = d78c3d80f551ec4e576bcfbfdaedb2221123fbc5
 
 CC = g++
 CFLAGS = -std=c++11
 LDFLAGS =
-CHI_INCLUDE = dep/libchi/include
+QI_INCLUDE = dep/libqi/include
 DEV = yes
 
 
@@ -25,17 +25,16 @@ ifeq ($(DEBUG),yes)
 CFLAGS += -g -O0 -Wall -Wextra
 LDFLAGS += -rdynamic
 endif
-CFLAGS += -I $(CHI_INCLUDE)
+CFLAGS += -I $(QI_INCLUDE)
 
 
 .PHONY: build dep all clean
 
 build: $(BIN_DIR)/$(NAME)
 
-dep: dep/libchi
-	git -C $< checkout dev
+dep: dep/libqi
 	git -C $< pull origin dev
-	git -C $< checkout $(CHI_COMMIT)
+	git -C $< checkout $(QI_COMMIT)
 
 all: dep build
 	
@@ -67,7 +66,7 @@ $(INCL_DIR):
 $(BIN_DIR):
 	mkdir $(BIN_DIR)
 
-dep/libchi:
+dep/libqi:
 	mkdir -p $@
 	git -C $@ init
-	git -C $@ remote add origin https://github.com/AnAspectOf1/libchi.git
+	git -C $@ remote add origin https://github.com/AnAspectOf1/libqi.git
